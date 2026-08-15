@@ -21,6 +21,13 @@ import (
 var agentVersion = "0.1.0-dev"
 
 func main() {
+	for _, arg := range os.Args[1:] {
+		if arg == "--version" || arg == "-version" {
+			fmt.Println(agentVersion)
+			return
+		}
+	}
+
 	cfg, err := config.Parse(os.Args[1:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "servermend-agent:", err)
