@@ -1,0 +1,44 @@
+name: backend-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: install
+        run: npm ci
+
+      - name: syntax check
+        run: |
+          for f in $(find src -name '*.js'); do node --check "$f"; done
+
+      # Runs the full test suite, including HTTP integration tests against
+      # a real (in-memory) MongoDB via mongodb-memory-server — not just
+      # the pure rules-engine unit tests. This is what actually caught the
+      # router-mounting bug and the required-field-on-empty-string schema
+      # bug during development; neither would have been caught by
+      # anything short of a real request/response/DB round trip.
+      - name: test
+        run: npm test

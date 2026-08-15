@@ -2,22 +2,25 @@
   "name": "servermend-backend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Ingest API, rules engine, and LLM remediation layer for ServerMend.",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
-    "lint": "eslint src --ext .ts"
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "seed": "node src/scripts/seedCheckDefinitions.js"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.0"
   },
   "devDependencies": {
-    "typescript": "^5.5.0",
-    "tsx": "^4.16.0",
-    "@types/express": "^4.17.21",
-    "@types/node": "^20.14.0"
+    "mongodb-memory-server": "^10.0.0",
+    "supertest": "^7.0.0",
+    "vitest": "^2.0.5"
   }
 }
