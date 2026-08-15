@@ -66,9 +66,20 @@ On Windows, everything that reads `/proc/net/tcp`, `/etc/passwd`, or shells out 
 go test ./...
 ```
 
-29 tests across `baseline`, `checks`, and `report` — all pure-logic/parsing tests that don't depend on the real `/proc` or `/etc/passwd` (byte-order decoding for `/proc/net/tcp{,6}`, `sshd_config` `Include`/`Match` handling, baseline diffing, the report client's retry/backoff and offline queue against an `httptest` server, the Postgres/MySQL wire-protocol framing and crypto in `dbcreds.go`), plus a registry guard (`TestNoDuplicateCheckIDs`) that fails loudly if two checks ever collide on ID. No test requires root or a Linux host to run.
+34 tests across `baseline`, `checks`, `report`, and `cmd/servermend-sign` — all pure-logic/parsing tests that don't depend on the real `/proc` or `/etc/passwd` (byte-order decoding for `/proc/net/tcp{,6}`, `sshd_config` `Include`/`Match` handling, baseline diffing, the report client's retry/backoff and offline queue against an `httptest` server, the Postgres/MySQL wire-protocol framing and crypto in `dbcreds.go`), plus a registry guard (`TestNoDuplicateCheckIDs`) that fails loudly if two checks ever collide on ID. No test requires root or a Linux host to run.
 
 `.github/workflows/agent-ci.yml` runs `gofmt`, `go vet`, `go build`, `go test -race`, and `golangci-lint` on every push/PR touching `agent/**`, then does a real dry-run of the compiled agent on the `ubuntu-latest` runner as a smoke test — this is the actual-Linux validation local dev on Windows can't provide (no WSL/Docker available on this machine).
+
+## Signing releases
+
+`cmd/servermend-sign` is a minimal Ed25519 signer (stdlib `crypto/ed25519` only — no `minisign` or other external tool needed, consistent with the agent's zero-dependency policy):
+
+```
+go run ./cmd/servermend-sign keygen release        # writes release.pub (commit/distribute) and release.key (keep private, chmod 600)
+./scripts/build-release.sh v0.1.0                    # cross-compiles agent + servermend-sign for linux/amd64 + arm64, signs every artifact if SERVERMEND_SIGNING_KEY is set
+```
+
+Full sign → verify round trip, plus tamper- and wrong-key-rejection, is covered by `cmd/servermend-sign/main_test.go` and was additionally verified by hand against real cross-compiled release binaries during development — not just trusted to compile.
 
 ## Install (on a target Linux host)
 
@@ -76,3 +87,5 @@ go test ./...
 GOOS=linux GOARCH=amd64 go build -o servermend-agent ./cmd/servermend-agent
 sudo ./install/install.sh ./servermend-agent
 ```
+
+`install.sh` refuses to install an unsigned binary unless `ALLOW_UNSIGNED=1` is set — see the comments in `install/install.sh` for the signature-verification flow (`SERVERMEND_PUBLIC_KEY_FILE` + a `servermend-sign` binary on `PATH` or shipped alongside the release).

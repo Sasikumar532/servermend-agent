@@ -27,23 +27,32 @@ fi
 
 # Refuse to install an unsigned binary unless the operator explicitly opts
 # out (e.g. a local dev build) — signature verification is the whole point
-# of shipping signed releases.
-if [[ -f "$BINARY_SRC.minisig" ]]; then
-  if ! command -v minisign >/dev/null 2>&1; then
-    echo "found $BINARY_SRC.minisig but minisign isn't installed — install it or pass ALLOW_UNSIGNED=1 to skip verification" >&2
+# of shipping signed releases. servermend-sign (cmd/servermend-sign — no
+# external tool needed) must be either on PATH or shipped alongside the
+# binary in the same directory, since the target host has no Go toolchain
+# to build it itself.
+if [[ -f "$BINARY_SRC.sig" ]]; then
+  SIGN_TOOL=""
+  if command -v servermend-sign >/dev/null 2>&1; then
+    SIGN_TOOL="servermend-sign"
+  elif [[ -x "$(dirname "$BINARY_SRC")/servermend-sign" ]]; then
+    SIGN_TOOL="$(dirname "$BINARY_SRC")/servermend-sign"
+  fi
+  if [[ -z "$SIGN_TOOL" ]]; then
+    echo "found $BINARY_SRC.sig but servermend-sign isn't on PATH or next to $BINARY_SRC — it ships alongside the agent binary in each release, or pass ALLOW_UNSIGNED=1 to skip verification" >&2
     exit 1
   fi
-  if [[ -z "${SERVERMEND_PUBLIC_KEY:-}" ]]; then
-    echo "found $BINARY_SRC.minisig but SERVERMEND_PUBLIC_KEY isn't set — export the release public key first" >&2
+  if [[ -z "${SERVERMEND_PUBLIC_KEY_FILE:-}" ]]; then
+    echo "found $BINARY_SRC.sig but SERVERMEND_PUBLIC_KEY_FILE isn't set — export the path to the release's .pub file first" >&2
     exit 1
   fi
-  if ! minisign -V -P "$SERVERMEND_PUBLIC_KEY" -m "$BINARY_SRC"; then
+  if ! "$SIGN_TOOL" verify "$SERVERMEND_PUBLIC_KEY_FILE" "$BINARY_SRC" "$BINARY_SRC.sig"; then
     echo "signature verification FAILED for $BINARY_SRC — refusing to install" >&2
     exit 1
   fi
   echo "signature verified."
 elif [[ "${ALLOW_UNSIGNED:-}" != "1" ]]; then
-  echo "no $BINARY_SRC.minisig found and ALLOW_UNSIGNED is not set — refusing to install an unsigned binary" >&2
+  echo "no $BINARY_SRC.sig found and ALLOW_UNSIGNED is not set — refusing to install an unsigned binary" >&2
   echo "(set ALLOW_UNSIGNED=1 for local/dev builds)" >&2
   exit 1
 fi
