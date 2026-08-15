@@ -9,10 +9,11 @@ backend/
 ├── src/
 │   ├── app.js                    # Express app factory — see the mount-order comment before touching routing
 │   ├── index.js                  # real entry point: connects Mongo, starts listening
-│   ├── routes/                    # auth.js, servers.js (user-facing + remediation), reports.js (agent ingest)
-│   ├── models/                     # Mongoose schemas: User, Server, Report, CheckDefinition
+│   ├── routes/                    # auth.js, servers.js (user-facing + remediation), reports.js (agent ingest), baseline.js
+│   ├── models/                     # Mongoose schemas: User, Server, Report, CheckDefinition, Baseline
 │   ├── services/
 │   │   ├── rulesEngine.js          # pure function: findings + CheckDefinition severities -> per-category + overall score
+│   │   ├── baselineDiff.js          # pure function: confirmed vs. observed baseline -> per-field additions
 │   │   └── llm/remediationClient.js  # B2 — see "LLM remediation" below
 │   ├── middleware/
 │   │   ├── agentAuth.js             # per-server API key (SHA-256 hash lookup)
@@ -41,6 +42,16 @@ backend/
 
 The fallback isn't a stub: the endpoint always returns a real, usable explanation either way, and a live-key outage degrades quality, not availability. `test/remediationClient.test.js` and the `remediation endpoint` block in `test/api.test.js` exercise both branches (including a genuinely-thrown LLM error) via `_setClientForTesting()`, which swaps in a fake Anthropic client — no real API key or network access needed to test the fallback logic, and the actual no-key path is verified separately (see the module's default export behavior with `ANTHROPIC_API_KEY` unset).
 
+## Baseline confirmation (server-side mirror of the agent's local baseline)
+
+The agent's persistence checks (cron entries, `authorized_keys`, systemd units, SUID binaries) diff against a local file on the host — that never changes. This is a **separate, additive** server-side mirror: `models/Baseline.js` holds one `{confirmed, pending}` document per server, and the agent pushes what it currently observes on *every* run (not just capture runs) via `POST /servers/:id/baseline`.
+
+- The first push for a server becomes `confirmed` outright, matching the agent's own "captured automatically on first run" rule.
+- After that, a push containing something not in `confirmed` (an addition — removals are never flagged, matching `agent/baseline/baseline.go`'s `Diff` semantics exactly, via `services/baselineDiff.js`) is held as `pending` and does **not** get applied automatically.
+- A user reviews `GET /servers/:id/baseline` (confirmed + pending + the diff) from the dashboard and explicitly promotes it with `POST /servers/:id/baseline/confirm`. That's the actual point of this: an SSH key that appears on a server now gets a human decision recorded centrally, instead of the only "yes this is fine" path being a local `--update-baseline` run on the box itself — which a compromised host could just as easily run on its own.
+
+Verified against a real backend + the real Go agent binary (not just `mongodb-memory-server`): first run correctly became `confirmed`; a second identical run produced no false drift; and a manually-pushed addition correctly went `pending`, showed up on `GET`, and `POST /confirm` promoted it and cleared `pending`. `test/baselineDiff.test.js` (pure diff logic) and `test/baseline.route.test.js` (full HTTP integration, both the agent-facing push and the dashboard-facing read/confirm) cover it in CI.
+
 ## Auth model
 
 - **Agents** authenticate with a per-server API key: `Authorization: Bearer <key>`. The key is stored as a SHA-256 hash (not bcrypt — API keys are high-entropy random tokens, not human passwords, so a fast hash with a unique index is the correct pattern; bcrypt's slow-hash property defends against brute-forcing *weak* secrets, which isn't the threat model here). Issued once via `POST /api/v1/servers`, shown exactly once in the response.
@@ -57,6 +68,9 @@ Full machine-readable spec: `GET /api/v1/openapi.yaml` (served straight from `op
 | `GET /api/v1/servers` | user JWT | list owned servers with latest score |
 | `GET /api/v1/servers/:id`, `/servers/:id/reports`, `/servers/:id/findings` | user JWT | detail, report history, latest findings |
 | `POST /api/v1/servers/:id/findings/:checkId/remediation` | user JWT | B2 — generate a remediation explanation for one failed finding |
+| `POST /api/v1/servers/:id/baseline` | agent API key | agent pushes its observed persistence baseline (every run) |
+| `GET /api/v1/servers/:id/baseline` | user JWT | current confirmed baseline + any pending drift |
+| `POST /api/v1/servers/:id/baseline/confirm` | user JWT | promote pending drift to confirmed |
 | `POST /api/v1/reports` | agent API key | ingest a report — the actual scoring entry point |
 
 ## Rate limiting
@@ -101,14 +115,16 @@ npm run dev
 npm test
 ```
 
-44 tests across seven files:
+60 tests across nine files:
 - `test/rulesEngine.test.js` — pure scoring logic, no DB
 - `test/checkCatalog.test.js` — seed-data integrity + the agent-ID snapshot check, no DB
+- `test/baselineDiff.test.js` — pure baseline diff logic (additions-only, matches the Go agent's `Diff` semantics), no DB
 - `test/remediationClient.test.js` — B2 remediation client, both the template-fallback and LLM branches, via an injected fake Anthropic client — no DB, no real API key
 - `test/rateLimit.test.js` — the fixed-window limiter in isolation: under/over limit, headers, per-key isolation, window reset
 - `test/openapi.test.js` — confirms `GET /api/v1/openapi.yaml` serves the spec
 - `test/seedScript.test.js` — regression test for a real Windows bug (see below): spawns `seedCheckDefinitions.js` as an actual subprocess against `mongodb-memory-server`, not just calling the exported function
 - `test/api.test.js` — full HTTP integration tests (signup/login, server creation, ownership isolation, report ingestion and scoring, unscored-checkId handling, the B2 remediation endpoint) against a real MongoDB via `mongodb-memory-server`, which downloads its own portable `mongod` binary on first use (no system-wide MongoDB or Docker install needed — confirmed working in a sandboxed dev environment with neither available, and separately re-verified against a real persistent local `mongod` instance)
+- `test/baseline.route.test.js` — full HTTP integration for the baseline sync/read/confirm flow: first-push-becomes-confirmed, drift held as pending, confirm promotes it, a resolved-drift push clears a stale pending, ownership isolation
 
 `.github/workflows/backend-ci.yml` runs the full suite on `ubuntu-latest` on every push/PR touching `backend/**`.
 

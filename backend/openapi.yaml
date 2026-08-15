@@ -242,6 +242,99 @@ paths:
         "404": { description: "Not found, or not owned by the authenticated user" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 
+  /servers/{id}/baseline:
+    post:
+      summary: >
+        Agent-facing: push the currently-observed persistence baseline
+        (authorized_keys, cron entries, systemd units, SUID binaries).
+        Sent on every agent run, not just capture runs. The first push for
+        a server becomes the confirmed baseline outright; after that, any
+        addition is held as `pending` until a user confirms it via
+        POST /baseline/confirm — never applied automatically. Independent
+        of the agent's own local baseline file, which it still diffs
+        against itself regardless of this endpoint's state.
+      security: [{ agentApiKey: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [server_id, baseline]
+              properties:
+                server_id: { type: string, format: uuid }
+                baseline:
+                  type: object
+                  description: Same shape as the agent's local baseline.json (snake_case field names).
+                  properties:
+                    captured_at: { type: string, format: date-time }
+                    authorized_keys: { type: array, items: { type: string } }
+                    system_cron_entries: { type: array, items: { type: string } }
+                    user_cron_entries: { type: array, items: { type: string } }
+                    systemd_units: { type: array, items: { type: string } }
+                    suid_binaries: { type: array, items: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [confirmed, pending] }
+                  diff:
+                    type: object
+                    description: Present only when status is "pending" — per-field list of additions vs. the confirmed baseline.
+                  baseline:
+                    type: object
+                    description: The current confirmed baseline (unchanged when status is "pending").
+        "400": { description: "Malformed payload" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "API key does not match server_id in the body" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+    get:
+      summary: >
+        Dashboard-facing: the current confirmed baseline, plus any pending
+        (unconfirmed) drift and its diff against confirmed.
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  confirmed: { type: object, nullable: true }
+                  pending: { type: object, nullable: true }
+                  pendingSince: { type: string, format: date-time, nullable: true }
+                  diff: { type: object, nullable: true }
+        "404": { description: "Not found, or not owned by the authenticated user" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /servers/{id}/baseline/confirm:
+    post:
+      summary: Promote the current pending baseline to confirmed. The actual "confirm" step for reviewed drift.
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [confirmed] }
+                  baseline: { type: object }
+        "404": { description: "Not found: server not owned, or no pending baseline to confirm" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
   /servers/{id}/findings/{checkId}/remediation:
     post:
       summary: >

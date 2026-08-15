@@ -89,3 +89,13 @@ export const dashboardRateLimit = rateLimit({
   windowMs: 60_000,
   keyFn: (req) => `dashboard:${req.userId ?? req.ip}`,
 });
+
+// Separate bucket from reportsRateLimit even though both are agent-keyed
+// and hit once per run — conflating them would mean a baseline push that
+// happens to land in the same window as a retried report send eats into
+// the same budget for no reason.
+export const baselineRateLimit = rateLimit({
+  limit: 30,
+  windowMs: 60_000,
+  keyFn: (req) => `baseline:${req.agentServerId ?? req.ip}`,
+});

@@ -4,6 +4,7 @@ import path from "node:path";
 import authRouter from "./routes/auth.js";
 import serversRouter from "./routes/servers.js";
 import reportsRouter from "./routes/reports.js";
+import baselineRouter from "./routes/baseline.js";
 import { startRateLimitCleanup } from "./middleware/rateLimit.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,7 @@ export function createApp() {
   app.use("/api/v1", authRouter);
   app.use("/api/v1", serversRouter);
   app.use("/api/v1", reportsRouter);
+  app.use("/api/v1", baselineRouter);
 
   // Keeps error responses JSON instead of Express's default HTML error page.
   app.use((err, _req, res, _next) => {

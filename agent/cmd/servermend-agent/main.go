@@ -44,9 +44,11 @@ func main() {
 	rc := &checks.RunContext{
 		Baseline:    existing,
 		CaptureMode: cfg.UpdateBaseline || !found,
-	}
-	if rc.CaptureMode {
-		rc.NewBaseline = &baseline.Baseline{CapturedAt: time.Now().UTC()}
+		// Populated by every baseline-aware check regardless of
+		// CaptureMode (see RunContext.NewBaseline) — the local file below
+		// is only overwritten during CaptureMode, but this run's snapshot
+		// is always pushed to the backend afterward for drift review.
+		NewBaseline: &baseline.Baseline{CapturedAt: time.Now().UTC()},
 	}
 
 	rep := &report.Report{
@@ -88,6 +90,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "servermend-agent: flushed %d queued report(s), then: %v\n", sent, err)
 	} else if sent > 0 {
 		fmt.Fprintf(os.Stderr, "servermend-agent: flushed %d previously queued report(s)\n", sent)
+	}
+
+	// Best-effort, deliberately: a failure here never touches the run's
+	// exit code or blocks the report send below — see baseline.Client's
+	// type comment. Runs before Send so it still happens even if Send
+	// exits the process on failure further down.
+	baselineClient := baseline.NewClient(cfg.BackendURL, cfg.APIKey)
+	if result, err := baselineClient.Push(ctx, cfg.ServerID, rc.NewBaseline); err != nil {
+		fmt.Fprintln(os.Stderr, "servermend-agent: failed to push baseline to backend (non-fatal):", err)
+	} else if result.Status == "pending" {
+		fmt.Fprintln(os.Stderr, "servermend-agent: baseline drift detected, awaiting confirmation on the dashboard")
 	}
 
 	if err := client.Send(ctx, rep); err != nil {

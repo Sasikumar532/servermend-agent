@@ -17,13 +17,19 @@ type RunContext struct {
 	Baseline *baseline.Baseline
 
 	// CaptureMode is true on a server's first run, or when --update-baseline
-	// is explicitly passed. Baseline-aware checks should record what they
-	// observe into NewBaseline instead of diffing.
+	// is explicitly passed. It controls whether a baseline-aware check
+	// diffs against Baseline or just records what it observes — see
+	// NewBaseline below, which every baseline-aware check populates
+	// regardless of CaptureMode.
 	CaptureMode bool
 
-	// NewBaseline accumulates observed state during CaptureMode. main.go
-	// saves it once, after every check has run, so the write is atomic
-	// across all baseline-contributing checks.
+	// NewBaseline accumulates what each baseline-aware check currently
+	// observes, on every run — not just during CaptureMode. main.go writes
+	// it to the local baseline file only when CaptureMode is true (so the
+	// write is atomic across all contributing checks), but always pushes
+	// it to the backend afterward (best-effort — see baseline.Client),
+	// which is how server-side drift detection stays current on ordinary,
+	// non-capture runs too.
 	NewBaseline *baseline.Baseline
 }
 

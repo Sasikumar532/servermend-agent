@@ -84,8 +84,9 @@ func (c cronSystemJobs) Title() string    { return "Unrecognized/modified entrie
 
 func (c cronSystemJobs) Run(rc *RunContext) report.Finding {
 	observed := collectSystemCronEntries()
+	// Recorded regardless of CaptureMode — see RunContext.NewBaseline.
+	rc.NewBaseline.SystemCronEntries = observed
 	if rc.CaptureMode {
-		rc.NewBaseline.SystemCronEntries = observed
 		return finding(c, report.StatusInfo, fmt.Sprintf("baseline captured: %d system cron file(s)", len(observed)))
 	}
 	if changed := baseline.Diff(rc.Baseline.SystemCronEntries, observed); len(changed) > 0 {
@@ -136,8 +137,10 @@ func (c cronUserJobs) Run(rc *RunContext) report.Finding {
 		return finding(c, report.StatusError, fmt.Sprintf(
 			"%d user crontab(s) unreadable due to permissions — results incomplete, agent likely needs root", permIssues))
 	}
+	// Recorded regardless of CaptureMode — see RunContext.NewBaseline.
+	rc.NewBaseline.UserCronEntries = observed
+
 	if rc.CaptureMode {
-		rc.NewBaseline.UserCronEntries = observed
 		msg := fmt.Sprintf("baseline captured: %d user crontab(s)", len(observed))
 		if permIssues > 0 {
 			return finding(c, report.StatusError, msg+fmt.Sprintf("; %d unreadable — baseline may be incomplete", permIssues))
@@ -184,8 +187,9 @@ func (c systemdUnexpectedUnits) Run(rc *RunContext) report.Finding {
 	if err != nil {
 		return finding(c, report.StatusError, fmt.Sprintf("run systemctl: %v", err))
 	}
+	// Recorded regardless of CaptureMode — see RunContext.NewBaseline.
+	rc.NewBaseline.SystemdUnits = observed
 	if rc.CaptureMode {
-		rc.NewBaseline.SystemdUnits = observed
 		return finding(c, report.StatusInfo, fmt.Sprintf("baseline captured: %d enabled unit(s)", len(observed)))
 	}
 	if changed := baseline.Diff(rc.Baseline.SystemdUnits, observed); len(changed) > 0 {
@@ -368,8 +372,9 @@ func (c suidSgidUnexpected) Title() string    { return "Unexpected SUID/SGID bin
 
 func (c suidSgidUnexpected) Run(rc *RunContext) report.Finding {
 	observed := collectSuidSgidBinaries()
+	// Recorded regardless of CaptureMode — see RunContext.NewBaseline.
+	rc.NewBaseline.SuidBinaries = observed
 	if rc.CaptureMode {
-		rc.NewBaseline.SuidBinaries = observed
 		return finding(c, report.StatusInfo, fmt.Sprintf("baseline captured: %d SUID/SGID binar(y/ies)", len(observed)))
 	}
 	if changed := baseline.Diff(rc.Baseline.SuidBinaries, observed); len(changed) > 0 {

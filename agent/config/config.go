@@ -38,7 +38,7 @@ func Parse(args []string) (*Config, error) {
 	fs.BoolVar(&cfg.DryRun, "dry-run", false, "run checks and print the report without sending it")
 	fs.StringVar(&output, "output", "stdout", "local output format: stdout | json")
 	fs.StringVar(&cfg.BaselinePath, "baseline-path", "/var/lib/servermend/baseline.json", "local path to the persistence/drift baseline file")
-	fs.BoolVar(&cfg.UpdateBaseline, "update-baseline", false, "recapture the baseline from current state instead of diffing against it — the v0 stand-in for confirming drift via the dashboard")
+	fs.BoolVar(&cfg.UpdateBaseline, "update-baseline", false, "recapture the LOCAL baseline from current state instead of diffing against it — independent of confirming drift on the backend via the dashboard (POST /baseline/confirm), which every run's observed state is pushed to regardless of this flag")
 	fs.StringVar(&cfg.QueueDir, "queue-dir", "/var/lib/servermend/queue", "local directory for reports that couldn't be sent, retried on the next run")
 
 	if err := fs.Parse(args); err != nil {

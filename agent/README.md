@@ -8,7 +8,7 @@ Read-only host-audit agent. Runs checks, diffs persistence-related state against
 agent/
 ├── cmd/servermend-agent/   # main.go — entry point, CLI flags, wires baseline + checks together
 ├── checks/                  # one file per category — see below for what's implemented
-├── baseline/                 # local baseline store: capture on first run, diff on every run after
+├── baseline/                 # local baseline store (capture/diff) + Client that best-effort pushes it to the backend
 ├── report/                    # Finding/Report structs, HTTPS client to the backend
 ├── config/                     # CLI flag parsing
 ├── PERMISSIONS.md               # why the agent runs as root, sandboxed via systemd, not a sudoers allowlist
@@ -50,7 +50,9 @@ Remaining: the CI workflow has been pushed to GitHub twice but not yet confirmed
 
 ## Baseline
 
-Persistence and `ssh-authorized-keys-diff` checks compare current state against `--baseline-path` (default `/var/lib/servermend/baseline.json`). First run (or any run with `--update-baseline`) captures current state instead of diffing — this is the CLI stand-in for "explicit user confirmation" until the dashboard's confirm/reject flow (D2) exists.
+Persistence and `ssh-authorized-keys-diff` checks compare current state against `--baseline-path` (default `/var/lib/servermend/baseline.json`). First run (or any run with `--update-baseline`) captures current state instead of diffing.
+
+That local file is the only thing local scoring depends on, and it's unaffected by what follows: on **every** run (capture or not), the agent also pushes its currently-observed state to the backend via `POST /servers/:id/baseline` — best-effort, a single attempt, logged and ignored on failure (see `baseline.Client`'s doc comment; local diffing never depends on this succeeding). The backend holds its own `confirmed`/`pending` baseline per server (`backend/src/models/Baseline.js`): the first push becomes confirmed outright, any later addition is held as `pending` until a user explicitly promotes it via `POST /servers/:id/baseline/confirm` from the dashboard — the intended "explicit user confirmation" path, now real rather than only a local `--update-baseline` run on the box itself. The two confirmation paths (local file, backend `confirmed`) are independent; nothing about this endpoint changes what a check scores locally.
 
 ## Local run
 
@@ -66,7 +68,7 @@ On Windows, everything that reads `/proc/net/tcp`, `/etc/passwd`, or shells out 
 go test ./...
 ```
 
-34 tests across `baseline`, `checks`, `report`, and `cmd/servermend-sign` — all pure-logic/parsing tests that don't depend on the real `/proc` or `/etc/passwd` (byte-order decoding for `/proc/net/tcp{,6}`, `sshd_config` `Include`/`Match` handling, baseline diffing, the report client's retry/backoff and offline queue against an `httptest` server, the Postgres/MySQL wire-protocol framing and crypto in `dbcreds.go`), plus a registry guard (`TestNoDuplicateCheckIDs`) that fails loudly if two checks ever collide on ID. No test requires root or a Linux host to run.
+38 tests across `baseline`, `checks`, `report`, and `cmd/servermend-sign` — all pure-logic/parsing tests that don't depend on the real `/proc` or `/etc/passwd` (byte-order decoding for `/proc/net/tcp{,6}`, `sshd_config` `Include`/`Match` handling, baseline diffing, `baseline.Client.Push`'s request shape/error handling against an `httptest` server (mirrors `report.Client`'s test style), the report client's retry/backoff and offline queue against an `httptest` server, the Postgres/MySQL wire-protocol framing and crypto in `dbcreds.go`), plus a registry guard (`TestNoDuplicateCheckIDs`) that fails loudly if two checks ever collide on ID. No test requires root or a Linux host to run.
 
 `.github/workflows/agent-ci.yml` runs `gofmt`, `go vet`, `go build`, `go test -race`, and `golangci-lint` on every push/PR touching `agent/**`, then does a real dry-run of the compiled agent on the `ubuntu-latest` runner as a smoke test — this is the actual-Linux validation local dev on Windows can't provide (no WSL/Docker available on this machine).
 

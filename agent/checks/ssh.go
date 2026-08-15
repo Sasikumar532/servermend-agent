@@ -131,8 +131,10 @@ func (c sshAuthorizedKeysDiff) Run(rc *RunContext) report.Finding {
 			"%d user(s)' authorized_keys unreadable due to permissions — results incomplete, agent likely needs root", permIssues))
 	}
 
+	// Recorded regardless of CaptureMode — see RunContext.NewBaseline.
+	rc.NewBaseline.AuthorizedKeys = observed
+
 	if rc.CaptureMode {
-		rc.NewBaseline.AuthorizedKeys = observed
 		msg := fmt.Sprintf("baseline captured: %d authorized key(s) across %d user(s)", len(observed), len(users))
 		if permIssues > 0 {
 			return finding(c, report.StatusError, msg+fmt.Sprintf("; %d user(s) unreadable — baseline may be incomplete", permIssues))

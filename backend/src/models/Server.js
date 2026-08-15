@@ -1,9 +1,9 @@
 import { Schema, model } from "mongoose";
 
-// The agent's persistence baseline (cron entries, authorized_keys, etc.)
-// stays local to the host — the agent diffs against it itself and only
-// ever sends already-computed pass/fail statuses. This collection is
-// intentionally just identity + auth, not a baseline store.
+// Identity + auth only. The persistence baseline (cron entries,
+// authorized_keys, etc.) that the agent diffs against locally on every
+// run is a separate concern — see models/Baseline.js — this collection
+// never holds it.
 const ServerSchema = new Schema(
   {
     serverId: { type: String, required: true, unique: true },
