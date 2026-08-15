@@ -1,0 +1,21 @@
+# Go
+agent/servermend-agent
+agent/*.exe
+agent/dist/
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

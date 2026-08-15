@@ -1,0 +1,22 @@
+[Unit]
+Description=ServerMend audit agent (one-shot run)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/servermend/agent.env
+ExecStart=/opt/servermend/servermend-agent --server-id=${SERVER_ID} --backend-url=${BACKEND_URL} --api-key=${API_KEY} --baseline-path=/var/lib/servermend/baseline.json
+
+# Runs as root (see ../PERMISSIONS.md for why), sandboxed:
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/servermend
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes

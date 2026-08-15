@@ -1,0 +1,67 @@
+name: agent-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agent/**"
+      - ".github/workflows/agent-ci.yml"
+  pull_request:
+    paths:
+      - "agent/**"
+      - ".github/workflows/agent-ci.yml"
+
+defaults:
+  run:
+    working-directory: agent
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: gofmt check
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go build
+        run: go build ./...
+
+      - name: go test
+        run: go test ./... -race -v
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: agent
+          version: latest
+
+      # Runs the real binary on a real Linux box — the actual target
+      # environment, not just a compile check. This is what stands in for
+      # WSL/a Linux VM in local dev: it exercises /proc, /etc/passwd,
+      # sshd_config parsing, and the Docker checks (the runner has Docker
+      # pre-installed) for real, on every push.
+      - name: smoke test (real Linux dry-run)
+        run: |
+          go run ./cmd/servermend-agent --dry-run --output json --baseline-path /tmp/servermend-baseline.json > /tmp/report.json
+          echo "--- findings ---"
+          jq '.findings[] | {id, status}' /tmp/report.json
+          count=$(jq '.findings | length' /tmp/report.json)
+          echo "total findings: $count"
+          if [ "$count" -lt 30 ]; then
+            echo "expected at least 30 findings from a real run, got $count — a check may be silently failing to register"
+            exit 1
+          fi
