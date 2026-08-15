@@ -119,6 +119,65 @@ func parseLocalAddress(field string, isV6 bool) (net.IP, uint16, error) {
 	return ip, uint16(port), nil
 }
 
+// tcpEstablished is the /proc/net/tcp{,6} "st" value for ESTABLISHED.
+const tcpEstablished = "06"
+
+// EstablishedConn is an outbound endpoint the host currently has an
+// established connection to — used by anomaly checks that look at what a
+// process is talking to, rather than what's listening.
+type EstablishedConn struct {
+	RemoteIP   net.IP
+	RemotePort uint16
+}
+
+// EstablishedConnections reads /proc/net/tcp{,6} for ESTABLISHED rows, the
+// same way ListeningSockets reads them for LISTEN rows.
+func EstablishedConnections() ([]EstablishedConn, error) {
+	var conns []EstablishedConn
+
+	v4, err := parseProcNetTCPConns("/proc/net/tcp", false)
+	if err != nil {
+		return nil, fmt.Errorf("read /proc/net/tcp: %w", err)
+	}
+	conns = append(conns, v4...)
+
+	if v6, err := parseProcNetTCPConns("/proc/net/tcp6", true); err == nil {
+		conns = append(conns, v6...)
+	}
+	return conns, nil
+}
+
+func parseProcNetTCPConns(path string, isV6 bool) ([]EstablishedConn, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return parseProcNetTCPConnsReader(f, isV6)
+}
+
+func parseProcNetTCPConnsReader(r io.Reader, isV6 bool) ([]EstablishedConn, error) {
+	var conns []EstablishedConn
+	scanner := bufio.NewScanner(r)
+	first := true
+	for scanner.Scan() {
+		if first {
+			first = false
+			continue
+		}
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 4 || fields[3] != tcpEstablished {
+			continue
+		}
+		ip, port, err := parseLocalAddress(fields[2], isV6) // rem_address field
+		if err != nil {
+			continue
+		}
+		conns = append(conns, EstablishedConn{RemoteIP: ip, RemotePort: port})
+	}
+	return conns, scanner.Err()
+}
+
 // PubliclyBoundAddrs returns every distinct address a given port is bound to
 // that is NOT loopback-only (127.0.0.0/8, ::1). Binding to 0.0.0.0 or "::"
 // counts as publicly bound, as does any explicit non-loopback address —

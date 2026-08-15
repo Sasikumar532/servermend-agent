@@ -17,7 +17,9 @@ agent/
 
 ## Status
 
-**40 of 41 MVP-priority catalog checks implemented** — every MVP check from §3.1–§3.4, §3.6, §3.7, §3.9 except `db-default-credentials` (see below). A0–A4 are done.
+**57 of 60 catalog checks implemented** — the entire catalog except `db-default-credentials` (deferred, see below) and the two "Later"-priority cloud checks (§3.12, out of scope until cloud/scale-stage deployments are a real target). A0–A6 and Phase 2 are done.
+
+### MVP (§3.1–§3.4, §3.6, §3.7, §3.9) — 40/41
 
 | Category | Checks | Notes |
 |---|---|---|
@@ -29,7 +31,16 @@ agent/
 | database (4/5) | redis-unauthenticated-exposed (fully real), postgres/mysql/mongodb-default-exposed (exposure-only) | `db-default-credentials` needs each DB's wire protocol implemented to test creds — deliberately deferred, not faked |
 | filesystem (3/3) | shadow-file-permissions, ssh-private-key-permissions, secrets-plaintext-broad-read | secrets scan is bounded to `/opt /srv /var/www /home`, depth-limited |
 
-Remaining: report-client retry/backoff + offline queue (A5), cross-compile + release signing (A6), then Phase 2 (sysctl, nginx, logging, anomaly detection — the last one needs a daemon execution mode, not the current one-shot scan).
+### Phase 2 (§3.5, §3.8, §3.10, §3.11) — 17/17
+
+| Category | Checks | Notes |
+|---|---|---|
+| sysctl (6/6) | ip-forward, icmp-redirects, syn-cookies, aslr-disabled, core-dumps-world-readable, tmp-noexec | `ip-forward=1` is treated as expected (not a fail) when Docker is installed, since Docker requires it — avoids a near-universal false positive on this product's actual target audience |
+| nginx (4/4) | server-tokens, tls-weak-config, directory-listing, default-artifacts | text-search over concatenated `*.conf` files under `/etc/nginx`, not a full config parser — sufficient for these four directive-presence questions |
+| logging (3/3) | logging-enabled, log-rotation-configured, auditd-present | `logging-enabled` falls back to `journalctl --disk-usage` on journald-only hosts with no `auth.log`/`secure` |
+| anomaly (4/4) | miner-process-signature, outbound-mining-pool-connection, sustained-high-cpu-unexpected-process, high-outbound-connection-count | The first two are genuine point-in-time facts (a miner binary running now, a connection to a known Stratum port now). The latter two are **single-snapshot approximations** — average CPU since process start, connection count at scan time — explicitly labeled as such in their output. A real daemon mode sampling over a time window would be strictly more accurate; not blocking the whole category on that architecture decision was a deliberate call. |
+
+Remaining: `db-default-credentials`, the two "Later" cloud checks, and — separately — the CI workflow has been pushed to GitHub but not yet confirmed green on a real run.
 
 ## Baseline
 
@@ -49,7 +60,7 @@ On Windows, everything that reads `/proc/net/tcp`, `/etc/passwd`, or shells out 
 go test ./...
 ```
 
-20 tests across `baseline`, `checks`, and `report` — all pure-logic/parsing tests that don't depend on the real `/proc` or `/etc/passwd` (byte-order decoding for `/proc/net/tcp{,6}`, `sshd_config` `Include`/`Match` handling, baseline diffing, the report client's retry/backoff and offline queue against an `httptest` server). No test requires root or a Linux host to run.
+22 tests across `baseline`, `checks`, and `report` — all pure-logic/parsing tests that don't depend on the real `/proc` or `/etc/passwd` (byte-order decoding for `/proc/net/tcp{,6}`, `sshd_config` `Include`/`Match` handling, baseline diffing, the report client's retry/backoff and offline queue against an `httptest` server), plus a registry guard (`TestNoDuplicateCheckIDs`) that fails loudly if two checks ever collide on ID. No test requires root or a Linux host to run.
 
 `.github/workflows/agent-ci.yml` runs `gofmt`, `go vet`, `go build`, `go test -race`, and `golangci-lint` on every push/PR touching `agent/**`, then does a real dry-run of the compiled agent on the `ubuntu-latest` runner as a smoke test — this is the actual-Linux validation local dev on Windows can't provide (no WSL/Docker available on this machine).
 
