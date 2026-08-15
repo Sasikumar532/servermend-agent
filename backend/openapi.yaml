@@ -1,0 +1,312 @@
+openapi: 3.0.3
+info:
+  title: ServerMend Backend API
+  version: 0.1.0
+  description: >
+    Ingest API, rules engine, and dashboard reads for ServerMend. Agents
+    authenticate with a per-server API key; dashboard clients authenticate
+    with a JWT from /auth/login or /auth/signup.
+servers:
+  - url: http://localhost:4000/api/v1
+
+components:
+  securitySchemes:
+    agentApiKey:
+      type: http
+      scheme: bearer
+      description: Per-server API key, issued once by POST /servers.
+    userJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Finding:
+      type: object
+      required: [id, category, title, status, detail]
+      properties:
+        id: { type: string, example: ssh-root-login }
+        category: { type: string, example: ssh }
+        title: { type: string }
+        status: { type: string, enum: [pass, fail, info, error] }
+        detail: { type: string }
+        severity:
+          type: string
+          nullable: true
+          enum: [critical, high, medium, low, null]
+        scored:
+          type: boolean
+          description: false if the checkId had no matching CheckDefinition (agent/backend version skew).
+
+    Score:
+      type: object
+      properties:
+        overall: { type: integer, minimum: 0, maximum: 100 }
+        byCategory:
+          type: object
+          additionalProperties: { type: integer, minimum: 0, maximum: 100 }
+
+    Server:
+      type: object
+      properties:
+        serverId: { type: string, format: uuid }
+        hostname: { type: string, nullable: true }
+        agentVersion: { type: string, nullable: true }
+        lastSeenAt: { type: string, format: date-time, nullable: true }
+        score: { $ref: "#/components/schemas/Score" }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Missing, malformed, or invalid credentials.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Rate limit exceeded. See Retry-After header.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+paths:
+  /healthz:
+    get:
+      summary: Liveness check
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { ok: { type: boolean } }
+
+  /auth/signup:
+    post:
+      summary: Create a dashboard account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { token: { type: string } }
+        "400": { description: "Invalid input" }
+        "409": { description: "Email already registered" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /auth/login:
+    post:
+      summary: Log in to an existing dashboard account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { token: { type: string } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /servers:
+    post:
+      summary: Register a new server and issue its API key
+      security: [{ userJwt: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { hostname: { type: string } }
+      responses:
+        "201":
+          description: >
+            Server created. apiKey is returned exactly once — it's stored
+            as a hash and never retrievable again after this response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  serverId: { type: string, format: uuid }
+                  apiKey: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+    get:
+      summary: List servers owned by the authenticated user
+      security: [{ userJwt: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  servers:
+                    type: array
+                    items: { $ref: "#/components/schemas/Server" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /servers/{id}:
+    get:
+      summary: Get one server's detail
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Server" }
+        "404": { description: "Not found, or not owned by the authenticated user" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /servers/{id}/reports:
+    get:
+      summary: Report history for a server (most recent first)
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        agentVersion: { type: string }
+                        timestamp: { type: string, format: date-time }
+                        score: { $ref: "#/components/schemas/Score" }
+        "404": { description: "Not found, or not owned by the authenticated user" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /servers/{id}/findings:
+    get:
+      summary: Findings from the most recent report
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  findings:
+                    type: array
+                    items: { $ref: "#/components/schemas/Finding" }
+                  score: { $ref: "#/components/schemas/Score" }
+        "404": { description: "Not found, or not owned by the authenticated user" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /servers/{id}/findings/{checkId}/remediation:
+    post:
+      summary: >
+        Generate a remediation explanation for one failed finding (B2).
+        Uses an LLM when ANTHROPIC_API_KEY is configured; otherwise falls
+        back to a deterministic explanation built from the check's
+        rationale and fix command, so the response is always useful.
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: checkId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkId: { type: string }
+                  source: { type: string, enum: [llm, template] }
+                  explanation: { type: string }
+        "404": { description: "Not found: server not owned, or checkId not in the latest report" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /reports:
+    post:
+      summary: Ingest an agent report (agent-facing, not for dashboard clients)
+      security: [{ agentApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [server_id, findings]
+              properties:
+                server_id: { type: string, format: uuid }
+                agent_version: { type: string }
+                timestamp: { type: string, format: date-time }
+                findings:
+                  type: array
+                  items:
+                    type: object
+                    required: [id, category, title, status, detail]
+                    properties:
+                      id: { type: string }
+                      category: { type: string }
+                      title: { type: string }
+                      status: { type: string, enum: [pass, fail, info, error] }
+                      detail: { type: string }
+      responses:
+        "201":
+          description: Scored and stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId: { type: string }
+                  score: { $ref: "#/components/schemas/Score" }
+                  unscoredCheckIds:
+                    type: array
+                    items: { type: string }
+        "400": { description: "Malformed payload" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "API key does not match server_id in the body" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }

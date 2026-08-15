@@ -8,4 +8,9 @@ export const env = {
   // module-level throw would make the config module unimportable in that
   // context.
   jwtSecret: process.env.JWT_SECRET ?? "",
+  // Optional. When unset, remediationClient.js falls back to a
+  // deterministic template built from checkCatalog data instead of
+  // calling out to the LLM — the remediation endpoint always returns
+  // something useful, live key or not.
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
 };

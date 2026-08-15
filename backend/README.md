@@ -1,6 +1,6 @@
 # servermend-backend
 
-Plain JavaScript (ESM, no TypeScript) Node/Express/MongoDB API. Authenticates agent reports, runs the deterministic rules engine, and serves the dashboard read API. LLM remediation (B2) isn't built yet.
+Plain JavaScript (ESM, no TypeScript) Node/Express/MongoDB API. Authenticates agent reports, runs the deterministic rules engine, serves the dashboard read API, and generates remediation guidance for failed findings.
 
 ## Layout
 
@@ -9,24 +9,37 @@ backend/
 ├── src/
 │   ├── app.js                    # Express app factory — see the mount-order comment before touching routing
 │   ├── index.js                  # real entry point: connects Mongo, starts listening
-│   ├── routes/                    # auth.js, servers.js (user-facing), reports.js (agent ingest)
+│   ├── routes/                    # auth.js, servers.js (user-facing + remediation), reports.js (agent ingest)
 │   ├── models/                     # Mongoose schemas: User, Server, Report, CheckDefinition
 │   ├── services/
-│   │   └── rulesEngine.js          # pure function: findings + CheckDefinition severities -> per-category + overall score
+│   │   ├── rulesEngine.js          # pure function: findings + CheckDefinition severities -> per-category + overall score
+│   │   └── llm/remediationClient.js  # B2 — see "LLM remediation" below
 │   ├── middleware/
 │   │   ├── agentAuth.js             # per-server API key (SHA-256 hash lookup)
 │   │   ├── userAuth.js               # dashboard JWT
-│   │   └── asyncHandler.js            # see "A bug worth knowing about" below
+│   │   ├── asyncHandler.js            # see "A bug worth knowing about" below
+│   │   └── rateLimit.js               # in-memory fixed-window limiter, no dependency
 │   ├── data/checkCatalog.js            # all 60 check definitions — severity, rationale, fix commands
 │   ├── scripts/seedCheckDefinitions.js  # upserts checkCatalog.js into MongoDB
 │   └── config/env.js
+├── openapi.yaml                    # served at GET /api/v1/openapi.yaml
 ├── test/                          # see Tests below
 └── package.json
 ```
 
 ## Status
 
-**B0 (foundations) and B1 (ingest + rules engine) are done.** B3 (dashboard read API) is done as part of the same pass — server list, findings, report history. B2 (LLM remediation layer) is not built.
+**B0 (foundations), B1 (ingest + rules engine), B2 (LLM remediation), and B3 (dashboard read API) are all done.**
+
+## LLM remediation (B2)
+
+`POST /api/v1/servers/:id/findings/:checkId/remediation` generates a plain-language explanation and next step for one failed finding, on demand (not baked into `GET /findings` — an LLM call per failed finding on every dashboard load would be slow and, with a real key configured, wastefully expensive).
+
+`services/llm/remediationClient.js` is pluggable by design:
+- If `ANTHROPIC_API_KEY` is set, it calls `claude-haiku-4-5` via the official `@anthropic-ai/sdk`, grounded in the finding's detail plus the check's known rationale and fix command (so it isn't inventing anything not already on file) — response `source: "llm"`.
+- If no key is set, or the LLM call fails or errors for any reason (network, rate limit, empty response), it falls back to a deterministic explanation built straight from `checkCatalog.js`'s rationale/fix/reference fields — response `source: "template"`.
+
+The fallback isn't a stub: the endpoint always returns a real, usable explanation either way, and a live-key outage degrades quality, not availability. `test/remediationClient.test.js` and the `remediation endpoint` block in `test/api.test.js` exercise both branches (including a genuinely-thrown LLM error) via `_setClientForTesting()`, which swaps in a fake Anthropic client — no real API key or network access needed to test the fallback logic, and the actual no-key path is verified separately (see the module's default export behavior with `ANTHROPIC_API_KEY` unset).
 
 ## Auth model
 
@@ -35,13 +48,20 @@ backend/
 
 ## API
 
+Full machine-readable spec: `GET /api/v1/openapi.yaml` (served straight from `openapi.yaml` in this directory).
+
 | Route | Auth | Purpose |
 |---|---|---|
 | `POST /api/v1/auth/signup`, `/auth/login` | none | dashboard account creation / login |
 | `POST /api/v1/servers` | user JWT | register a server, get back `{serverId, apiKey}` |
 | `GET /api/v1/servers` | user JWT | list owned servers with latest score |
 | `GET /api/v1/servers/:id`, `/servers/:id/reports`, `/servers/:id/findings` | user JWT | detail, report history, latest findings |
+| `POST /api/v1/servers/:id/findings/:checkId/remediation` | user JWT | B2 — generate a remediation explanation for one failed finding |
 | `POST /api/v1/reports` | agent API key | ingest a report — the actual scoring entry point |
+
+## Rate limiting
+
+`middleware/rateLimit.js` is a small in-memory fixed-window limiter (no dependency) applied per-route, never via a blanket `router.use()` — see "A bug worth knowing about" for why that distinction matters on this codebase. Limits: 10 req/min per IP on auth routes, 30 req/min per server on report ingestion, 120 req/min per user on dashboard routes. Every response carries `X-RateLimit-Limit`/`-Remaining`/`-Reset`; a 429 additionally carries `Retry-After`. State resets automatically on a rolling window and is cleared between test runs via `_resetRateLimitState()` (needed because `supertest` requests share one IP, so tests would otherwise start tripping each other's budgets).
 
 ## Scoring
 
@@ -81,9 +101,17 @@ npm run dev
 npm test
 ```
 
-35 tests across three files:
+44 tests across seven files:
 - `test/rulesEngine.test.js` — pure scoring logic, no DB
 - `test/checkCatalog.test.js` — seed-data integrity + the agent-ID snapshot check, no DB
-- `test/api.test.js` — full HTTP integration tests (signup/login, server creation, ownership isolation, report ingestion and scoring, unscored-checkId handling) against a real MongoDB via `mongodb-memory-server`, which downloads its own portable `mongod` binary on first use (no system-wide MongoDB or Docker install needed — confirmed working in a sandboxed dev environment with neither available)
+- `test/remediationClient.test.js` — B2 remediation client, both the template-fallback and LLM branches, via an injected fake Anthropic client — no DB, no real API key
+- `test/rateLimit.test.js` — the fixed-window limiter in isolation: under/over limit, headers, per-key isolation, window reset
+- `test/openapi.test.js` — confirms `GET /api/v1/openapi.yaml` serves the spec
+- `test/seedScript.test.js` — regression test for a real Windows bug (see below): spawns `seedCheckDefinitions.js` as an actual subprocess against `mongodb-memory-server`, not just calling the exported function
+- `test/api.test.js` — full HTTP integration tests (signup/login, server creation, ownership isolation, report ingestion and scoring, unscored-checkId handling, the B2 remediation endpoint) against a real MongoDB via `mongodb-memory-server`, which downloads its own portable `mongod` binary on first use (no system-wide MongoDB or Docker install needed — confirmed working in a sandboxed dev environment with neither available, and separately re-verified against a real persistent local `mongod` instance)
 
 `.github/workflows/backend-ci.yml` runs the full suite on `ubuntu-latest` on every push/PR touching `backend/**`.
+
+## A second bug worth knowing about (Windows-specific)
+
+`npm run seed` silently did nothing on Windows: the script's direct-execution guard compared `import.meta.url` against a hand-built `` `file://${process.argv[1]}` `` string, which isn't a valid `file://` URL from a Windows backslash path (`C:\...`) via naive concatenation. The guard evaluated `false`, `main()` never ran, and the process exited 0 with zero output — indistinguishable from success unless you already knew what "seeded 60 check definitions" was supposed to print. Fixed with `pathToFileURL(process.argv[1]).href`, which builds the URL the same way Node's own module loader does on any platform. This class of bug can only be caught by actually spawning the script as a subprocess (`test/seedScript.test.js`) — every other test in this suite calls `seedCheckDefinitions()` directly, which bypasses the broken guard entirely.

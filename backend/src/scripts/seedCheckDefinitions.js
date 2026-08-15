@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { pathToFileURL } from "node:url";
 import { CheckDefinition } from "../models/CheckDefinition.js";
 import { checkCatalog } from "../data/checkCatalog.js";
 import { env } from "../config/env.js";
@@ -28,8 +29,12 @@ async function main() {
 }
 
 // Only run automatically when invoked directly (`npm run seed`), not when
-// imported by a test.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// imported by a test. Comparing against a plain `file://${process.argv[1]}`
+// string silently fails on Windows (backslashes, no triple-slash) — this
+// guard evaluated false there, so `npm run seed` did nothing and reported
+// success anyway. pathToFileURL() builds the URL the same way Node's own
+// module loader would, on any platform.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.error("seed failed:", err);
     process.exit(1);

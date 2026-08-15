@@ -3,11 +3,12 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 import { signUserToken } from "../middleware/userAuth.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import { authRateLimit } from "../middleware/rateLimit.js";
 
 const router = Router();
 const BCRYPT_ROUNDS = 12;
 
-router.post("/auth/signup", asyncHandler(async (req, res) => {
+router.post("/auth/signup", authRateLimit, asyncHandler(async (req, res) => {
   const { email, password } = req.body ?? {};
   if (typeof email !== "string" || typeof password !== "string" || password.length < 8) {
     res.status(400).json({ error: "email and a password of at least 8 characters are required" });
@@ -25,7 +26,7 @@ router.post("/auth/signup", asyncHandler(async (req, res) => {
   res.status(201).json({ token: signUserToken(user._id.toString()) });
 }));
 
-router.post("/auth/login", asyncHandler(async (req, res) => {
+router.post("/auth/login", authRateLimit, asyncHandler(async (req, res) => {
   const { email, password } = req.body ?? {};
   if (typeof email !== "string" || typeof password !== "string") {
     res.status(400).json({ error: "email and password are required" });

@@ -3,11 +3,13 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { seedCheckDefinitions } from "../src/scripts/seedCheckDefinitions.js";
 import { startTestDb, clearTestDb, stopTestDb } from "./mongoTestHelper.js";
+import { _setClientForTesting, _resetClientForTesting } from "../src/services/llm/remediationClient.js";
 
 const app = createApp();
 
 beforeAll(startTestDb);
 afterEach(clearTestDb);
+afterEach(_resetClientForTesting);
 afterAll(stopTestDb);
 
 async function signupAndLogin(email = "owner@example.com", password = "hunter22222") {
@@ -210,5 +212,66 @@ describe("report ingestion", () => {
     expect(res.body.findings[0].id).toBe("ssh-root-login");
     expect(res.body.findings[0].severity).toBe("critical");
     expect(res.body.findings[0].scored).toBe(true);
+  });
+});
+
+describe("remediation endpoint", () => {
+  async function setupServerWithFailingFinding() {
+    await seedCheckDefinitions();
+    const token = await signupAndLogin();
+    const { serverId, apiKey } = await createServer(token);
+    await request(app)
+      .post("/api/v1/reports")
+      .set("Authorization", `Bearer ${apiKey}`)
+      .send({
+        server_id: serverId,
+        agent_version: "0.2.0",
+        findings: [{ id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" }],
+      });
+    return { token, serverId };
+  }
+
+  it("404s for a checkId not present in the latest report", async () => {
+    const { token, serverId } = await setupServerWithFailingFinding();
+    const res = await request(app)
+      .post(`/api/v1/servers/${serverId}/findings/not-a-real-check/remediation`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(404);
+  });
+
+  it("404s for a server owned by someone else", async () => {
+    const { serverId } = await setupServerWithFailingFinding();
+    const otherToken = await signupAndLogin("other@example.com");
+    const res = await request(app)
+      .post(`/api/v1/servers/${serverId}/findings/ssh-root-login/remediation`)
+      .set("Authorization", `Bearer ${otherToken}`);
+    expect(res.status).toBe(404);
+  });
+
+  it("returns a template explanation when no LLM client is configured", async () => {
+    _setClientForTesting(null); // simulates ANTHROPIC_API_KEY unset, regardless of test env
+    const { token, serverId } = await setupServerWithFailingFinding();
+    const res = await request(app)
+      .post(`/api/v1/servers/${serverId}/findings/ssh-root-login/remediation`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.checkId).toBe("ssh-root-login");
+    expect(res.body.source).toBe("template");
+    expect(res.body.explanation).toContain("root SSH access");
+  });
+
+  it("returns the LLM's explanation when a client is configured and succeeds", async () => {
+    _setClientForTesting({
+      messages: { create: async () => ({ content: [{ type: "text", text: "Turn off root SSH login." }] }) },
+    });
+    const { token, serverId } = await setupServerWithFailingFinding();
+    const res = await request(app)
+      .post(`/api/v1/servers/${serverId}/findings/ssh-root-login/remediation`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.source).toBe("llm");
+    expect(res.body.explanation).toBe("Turn off root SSH login.");
   });
 });

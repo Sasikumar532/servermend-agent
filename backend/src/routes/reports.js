@@ -5,10 +5,11 @@ import { CheckDefinition } from "../models/CheckDefinition.js";
 import { scoreReport } from "../services/rulesEngine.js";
 import { requireAgentAuth } from "../middleware/agentAuth.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import { reportsRateLimit } from "../middleware/rateLimit.js";
 
 const router = Router();
 
-router.post("/reports", asyncHandler(requireAgentAuth), asyncHandler(async (req, res) => {
+router.post("/reports", asyncHandler(requireAgentAuth), reportsRateLimit, asyncHandler(async (req, res) => {
   const { server_id, agent_version, findings, timestamp } = req.body ?? {};
 
   if (typeof server_id !== "string" || !Array.isArray(findings)) {

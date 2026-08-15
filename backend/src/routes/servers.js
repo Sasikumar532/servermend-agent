@@ -2,9 +2,12 @@ import { Router } from "express";
 import crypto from "node:crypto";
 import { Server } from "../models/Server.js";
 import { Report } from "../models/Report.js";
+import { CheckDefinition } from "../models/CheckDefinition.js";
 import { requireUserAuth } from "../middleware/userAuth.js";
 import { hashApiKey } from "../middleware/agentAuth.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import { dashboardRateLimit } from "../middleware/rateLimit.js";
+import { explainFinding } from "../services/llm/remediationClient.js";
 
 const router = Router();
 
@@ -30,7 +33,7 @@ async function loadOwnedServer(req, res) {
   return server;
 }
 
-router.post("/servers", requireUserAuth, asyncHandler(async (req, res) => {
+router.post("/servers", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
   const { hostname } = req.body ?? {};
 
   const serverId = crypto.randomUUID();
@@ -48,7 +51,7 @@ router.post("/servers", requireUserAuth, asyncHandler(async (req, res) => {
   res.status(201).json({ serverId, apiKey });
 }));
 
-router.get("/servers", requireUserAuth, asyncHandler(async (req, res) => {
+router.get("/servers", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
   const servers = await Server.find({ ownerUserId: req.userId }).lean();
 
   const withScores = await Promise.all(
@@ -68,7 +71,7 @@ router.get("/servers", requireUserAuth, asyncHandler(async (req, res) => {
   res.json({ servers: withScores });
 }));
 
-router.get("/servers/:id", requireUserAuth, asyncHandler(async (req, res) => {
+router.get("/servers/:id", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
   const server = await loadOwnedServer(req, res);
   if (!server) return;
 
@@ -82,7 +85,7 @@ router.get("/servers/:id", requireUserAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-router.get("/servers/:id/reports", requireUserAuth, asyncHandler(async (req, res) => {
+router.get("/servers/:id/reports", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
   const server = await loadOwnedServer(req, res);
   if (!server) return;
 
@@ -96,7 +99,7 @@ router.get("/servers/:id/reports", requireUserAuth, asyncHandler(async (req, res
   res.json({ reports });
 }));
 
-router.get("/servers/:id/findings", requireUserAuth, asyncHandler(async (req, res) => {
+router.get("/servers/:id/findings", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
   const server = await loadOwnedServer(req, res);
   if (!server) return;
 
@@ -108,5 +111,29 @@ router.get("/servers/:id/findings", requireUserAuth, asyncHandler(async (req, re
 
   res.json({ findings: latest.findings, score: latest.score, reportedAt: latest.receivedAt });
 }));
+
+// On-demand rather than baked into GET /findings — an LLM call per failed
+// finding on every dashboard load would be slow and, with a real API key
+// configured, expensive for no benefit (most findings are never opened).
+router.post(
+  "/servers/:id/findings/:checkId/remediation",
+  requireUserAuth,
+  dashboardRateLimit,
+  asyncHandler(async (req, res) => {
+    const server = await loadOwnedServer(req, res);
+    if (!server) return;
+
+    const latest = await Report.findOne({ serverId: server.serverId }).sort({ receivedAt: -1 }).lean();
+    const finding = latest?.findings.find((f) => f.id === req.params.checkId);
+    if (!finding) {
+      res.status(404).json({ error: "finding not found in the latest report" });
+      return;
+    }
+
+    const checkDefinition = await CheckDefinition.findOne({ checkId: req.params.checkId }).lean();
+    const { source, explanation } = await explainFinding({ finding, checkDefinition });
+    res.json({ checkId: req.params.checkId, source, explanation });
+  })
+);
 
 export default router;
