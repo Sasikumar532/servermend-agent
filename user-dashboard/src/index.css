@@ -2,25 +2,26 @@
    by hand (see that file's header comment and docs/design-system.md).
    admin-dashboard's index.css declares the same block. */
 :root {
-  --bg: #f4f5f7;
+  --bg: #eef1f4;
   --surface: #ffffff;
-  --border: #dde1e6;
-  --text: #1c2128;
-  --text-muted: #5b6472;
-  --track: #e7e9ee;
+  --border: #d7dee3;
+  --text: #10192b;
+  --text-muted: #58697a;
+  --track: #e1e7ec;
 
-  --accent: #2f5ff2;
+  --brand-ink: #0b2545;
+  --accent: #0d7d74;
   --accent-contrast: #ffffff;
 
-  --critical: #c81e3a;
-  --high: #d9622b;
-  --medium: #b8860b;
-  --low: #4a5568;
-  --info: #4a6785;
+  --critical: #c31c38;
+  --high: #bd5a12;
+  --medium: #9c7209;
+  --low: #47576b;
+  --info: #14708c;
 
-  --good: #1c8a4a;
-  --warn: #b8860b;
-  --bad: #c81e3a;
+  --good: #12805a;
+  --warn: #9c7209;
+  --bad: #c31c38;
 }
 
 * {
@@ -88,8 +89,9 @@ code {
 
 .brand {
   font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--text);
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--brand-ink);
 }
 
 .app-main {
@@ -137,6 +139,11 @@ button {
   padding: 0.55rem 1rem;
   background: var(--accent);
   color: var(--accent-contrast);
+  transition: filter 0.1s ease;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(0.92);
 }
 
 button:disabled {

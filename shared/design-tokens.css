@@ -11,36 +11,44 @@
  * backend/src/services/baselineDiff.js vs. agent/baseline/baseline.go's
  * Diff). See docs/design-system.md for the full rationale, usage
  * guidance, and component patterns built on top of these tokens.
+ *
+ * Palette concept ("Secure Teal"): deep teal as the primary interactive
+ * color — reads as trust/calm/precision without the generic indigo-on-white
+ * "AI SaaS" look — reserving crimson strictly for critical severity so it
+ * never gets diluted by also being a default UI accent. A separate deep
+ * navy is used only for the brand wordmark, giving the identity its own
+ * mark distinct from interactive elements.
  */
 
 :root {
   /* Surfaces & text */
-  --bg: #f4f5f7;
+  --bg: #eef1f4;
   --surface: #ffffff;
-  --border: #dde1e6;
-  --text: #1c2128;
-  --text-muted: #5b6472;
-  --track: #e7e9ee; /* progress/bar background, e.g. score bars */
+  --border: #d7dee3;
+  --text: #10192b;
+  --text-muted: #58697a;
+  --track: #e1e7ec; /* progress/bar background, e.g. score bars */
 
-  /* Brand accent — primary buttons, links, focus */
-  --accent: #2f5ff2;
+  /* Brand */
+  --brand-ink: #0b2545; /* wordmark only — never used for interactive elements */
+  --accent: #0d7d74; /* primary buttons, links, focus */
   --accent-contrast: #ffffff; /* text/icon color placed on --accent */
 
   /* Finding severity scale (SeverityPill and similar). Always pair with a
      text label, never color alone — see docs/design-system.md. */
-  --critical: #c81e3a;
-  --high: #d9622b;
-  --medium: #b8860b;
-  --low: #4a5568;
-  --info: #4a6785; /* findings with no severity (informational checks) */
+  --critical: #c31c38;
+  --high: #bd5a12;
+  --medium: #9c7209;
+  --low: #47576b;
+  --info: #14708c; /* findings with no severity (informational checks) — teal-family, ties to brand */
 
   /* Score/quality bands (ScoreBars and any other aggregate-percentage
      display). A separate scale from severity above — different semantic
      domain (a single finding's severity vs. an aggregate 0-100 score) —
-     even though --warn and --medium, --bad and --critical, currently
-     share a hex value. Keep them as distinct tokens; don't collapse them
-     even if the values happen to match today. */
-  --good: #1c8a4a;
-  --warn: #b8860b;
-  --bad: #c81e3a;
+     even though --warn/--medium and --bad/--critical currently share a
+     hex value. Keep them as distinct tokens; don't collapse them even if
+     the values happen to match today. */
+  --good: #12805a;
+  --warn: #9c7209;
+  --bad: #c31c38;
 }

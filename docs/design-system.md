@@ -11,26 +11,35 @@ between the two independent Vite apps).
 
 ## Color tokens
 
+**Palette concept: "Secure Teal."** Deep teal as the one primary interactive
+color — reads as trust/calm/precision for a security-repair tool without
+the generic indigo-on-white "AI SaaS" look — while crimson is reserved
+*strictly* for critical severity, never doubled as a default UI accent, so
+it keeps its alarm value. The brand wordmark uses its own deep navy
+(`--brand-ink`), distinct from the interactive teal, so the ServerMend
+mark reads as an identity rather than just another button color.
+
 | Token | Hex | Role |
 |---|---|---|
-| `--bg` | `#f4f5f7` | Page background |
+| `--bg` | `#eef1f4` | Page background |
 | `--surface` | `#ffffff` | Cards, panels, forms |
-| `--border` | `#dde1e6` | Hairline borders, table rules |
-| `--text` | `#1c2128` | Primary text |
-| `--text-muted` | `#5b6472` | Secondary text, meta, labels |
-| `--track` | `#e7e9ee` | Background of a bar/progress track |
-| `--accent` | `#2f5ff2` | Primary buttons, links, focus states |
+| `--border` | `#d7dee3` | Hairline borders, table rules |
+| `--text` | `#10192b` | Primary text |
+| `--text-muted` | `#58697a` | Secondary text, meta, labels |
+| `--track` | `#e1e7ec` | Background of a bar/progress track |
+| `--brand-ink` | `#0b2545` | Wordmark/logotype only — never used for interactive elements |
+| `--accent` | `#0d7d74` | Primary buttons, links, focus states |
 | `--accent-contrast` | `#ffffff` | Text/icon color placed on `--accent` |
 
 ### Finding severity scale
 
 | Token | Hex | Meaning |
 |---|---|---|
-| `--critical` | `#c81e3a` | crimson |
-| `--high` | `#d9622b` | burnt orange |
-| `--medium` | `#b8860b` | amber |
-| `--low` | `#4a5568` | slate |
-| `--info` | `#4a6785` | steel blue — findings with no severity (informational checks like `open-ports-scan`) |
+| `--critical` | `#c31c38` | crimson |
+| `--high` | `#bd5a12` | burnt orange |
+| `--medium` | `#9c7209` | deep amber |
+| `--low` | `#47576b` | slate |
+| `--info` | `#14708c` | teal-blue, ties to `--accent`'s family — findings with no severity (informational checks like `open-ports-scan`) |
 
 **Never rely on color alone to convey severity.** `SeverityPill` always
 renders the text label ("Critical", "High", …) alongside the color — the
@@ -43,9 +52,9 @@ for instance) must follow the same rule.
 
 | Token | Hex | Threshold (of a 0–100 score) |
 |---|---|---|
-| `--good` | `#1c8a4a` | ≥ 90 |
-| `--warn` | `#b8860b` | 70–89 |
-| `--bad` | `#c81e3a` | < 70 |
+| `--good` | `#12805a` | ≥ 90 |
+| `--warn` | `#9c7209` | 70–89 |
+| `--bad` | `#c31c38` | < 70 |
 
 This is a **separate scale from severity**, even though `--warn`/`--medium`
 and `--bad`/`--critical` currently share a hex value. They're different
@@ -102,7 +111,9 @@ needs the same kind of information:
 - **Buttons** — solid `--accent` fill with `--accent-contrast` text for
   primary actions; a bordered "ghost" variant (transparent fill,
   `--text-muted` text, `--border` outline) for secondary actions like
-  "Log out". Disabled state is `opacity: 0.6` plus `cursor: default` — no
+  "Log out". Hover is `filter: brightness(0.92)` — works for any accent
+  color without a separate hover token. Disabled state is `opacity: 0.6`
+  plus `cursor: default` — no
   separate disabled color token.
 - **Empty/error states** — empty states are a single `--text-muted`
   sentence explaining what to do next (never a bare "No data"); errors are
