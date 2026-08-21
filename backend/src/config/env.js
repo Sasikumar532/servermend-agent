@@ -25,4 +25,11 @@ export const env = {
     pass: process.env.SMTP_PASS ?? "",
     from: process.env.SMTP_FROM ?? "alerts@servermend.local",
   },
+  // Comma-separated explicit origin allowlist. Empty by default — see
+  // middleware/cors.js for what that default actually allows (any
+  // localhost/127.0.0.1 origin, any port) and why.
+  corsOrigins: (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
 };

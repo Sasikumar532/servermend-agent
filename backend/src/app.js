@@ -6,6 +6,7 @@ import serversRouter from "./routes/servers.js";
 import reportsRouter from "./routes/reports.js";
 import baselineRouter from "./routes/baseline.js";
 import { startRateLimitCleanup } from "./middleware/rateLimit.js";
+import { cors } from "./middleware/cors.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OPENAPI_PATH = path.join(__dirname, "..", "openapi.yaml");
@@ -15,6 +16,7 @@ const OPENAPI_PATH = path.join(__dirname, "..", "openapi.yaml");
 export function createApp() {
   startRateLimitCleanup(); // idempotent, unref'd — safe to call from tests too
   const app = express();
+  app.use(cors);
   app.use(express.json());
 
   app.get("/healthz", (_req, res) => res.json({ ok: true }));
