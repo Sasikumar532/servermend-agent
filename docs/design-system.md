@@ -128,7 +128,20 @@ four weight files rather than linking a CDN font.
   the bottom via `mt-auto`) beside a full-width main content area (no
   `max-width` cap — content fills the space beside the sidebar). The whole
   authenticated app lives inside this shell (`ProtectedRoute` → `Layout` →
-  page `Outlet`); only `/login` and `/signup` render outside it.
+  page `Outlet`); only `/login` and `/signup` render outside it. Main
+  content uses `pt-20` (not the usual `py-6` top value) specifically to
+  clear the fixed `ThemeToggle` sitting top-right — a smaller top padding
+  lets page-header content (e.g. "Add server") collide with it.
+- **The sidebar stays dark regardless of the app-wide theme** — it has its
+  own `dark` class applied directly on the `<aside>`, not just relying on
+  `<html>`'s class. HeroUI's tokens are defined under
+  `.dark,[data-theme=dark] { --surface: ...; ... }`, and CSS custom
+  properties resolve by DOM proximity — the *nearest* matching ancestor
+  (or the element itself) wins — so a `.dark`-classed element nested
+  inside a light-mode tree correctly scopes dark values to just that
+  subtree without touching anything outside it. No extra tokens or
+  overrides needed; every `bg-surface`/`text-muted`/`border-border`/etc.
+  utility already used inside the sidebar automatically resolves dark.
 - **Navigation uses plain react-router `NavLink`/`Link`, styled with
   Tailwind, not HeroUI's `Link`** — HeroUI's docs don't confirm a working
   react-router integration (its `Link` takes `href`, with an unverified

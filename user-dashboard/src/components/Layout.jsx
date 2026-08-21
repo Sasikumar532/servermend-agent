@@ -13,7 +13,12 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <aside className="flex w-56 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4">
+      {/* `dark` applied directly here, not just on <html> — HeroUI's
+          tokens are defined under `.dark,[data-theme=dark] { ... }`, and
+          CSS custom properties cascade by DOM proximity, so scoping this
+          class to the sidebar itself keeps it dark regardless of the
+          app-wide light/dark/system choice (see ThemeToggle). */}
+      <aside className="dark flex w-56 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4">
         <div className="px-2 text-lg font-bold tracking-tight text-accent">ServerMend</div>
         <nav className="flex flex-col gap-1">
           {NAV_ITEMS.map((item) => (
@@ -42,7 +47,10 @@ export function Layout() {
           </Button>
         </div>
       </aside>
-      <main className="flex w-full flex-1 flex-col gap-7 px-8 py-6">
+      {/* pt-20 (not py-6's usual top value) clears the fixed top-right
+          ThemeToggle, which otherwise overlaps page-header content like
+          the "Add server" button. */}
+      <main className="flex w-full flex-1 flex-col gap-7 px-8 pt-20 pb-6">
         <Outlet />
       </main>
     </div>
