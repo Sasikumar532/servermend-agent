@@ -220,11 +220,16 @@ same kind of information. Import everything from `@heroui/react`.
 - **Modal** — `<Modal>` wrapping `Modal.Backdrop` (`isOpen`/`onOpenChange`
   — inherited from the underlying React Aria `ModalOverlay` primitive) →
   `Modal.Container` → `Modal.Dialog` (size via `className`, e.g.
-  `sm:max-w-190`) → `Modal.CloseTrigger`, `Modal.Header` → `Modal.Heading`,
-  `Modal.Body`, `Modal.Footer`. Use a modal for a short-lived, one-off
-  action that doesn't deserve its own URL/back-button history entry
-  (registering a server is the current example); use a real routed page
-  for anything a user would want to link to, bookmark, or navigate to
+  `sm:max-w-190`, plus an explicit `border border-border shadow-2xl` —
+  don't rely on the surface/background color gap alone to separate the
+  dialog from the dimmed page behind it; a real dark theme's surface and
+  background can end up close enough that a modal reads as barely visible
+  without a border and shadow backing it up) → `Modal.CloseTrigger`,
+  `Modal.Header` → `Modal.Heading`, `Modal.Body`, `Modal.Footer`. Use a
+  modal for a short-lived, one-off action that doesn't deserve its own
+  URL/back-button history entry (registering a server is the current
+  example); use a real routed page for anything a user would want to link
+  to, bookmark, or navigate to
   directly.
 - **Severity/status** — `<Chip color={} variant={}>` per the severity
   table above; plain-text children auto-wrap in `Chip.Label`.

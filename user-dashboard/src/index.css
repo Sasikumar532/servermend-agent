@@ -18,15 +18,19 @@
 [data-theme="dark"] {
   --background: #0a0a0a;
   --foreground: #e4e4e4;
-  --surface: #111214;
+  /* --surface needs real separation from --background — a modal/card
+     rendered in --surface sits on top of the dimmed --background behind
+     it, and too small a gap between the two makes the modal barely
+     readable against the page (this was too subtle at #111214). */
+  --surface: #1a1c1f;
   --surface-foreground: #e4e4e4;
   --overlay: #050505;
   --overlay-foreground: #e4e4e4;
-  --default: #1c1e21;
+  --default: #232629;
   --default-foreground: #e4e4e4;
   --muted: #7d8280;
-  --border: #24272a;
-  --separator: #24272a;
+  --border: #2d3033;
+  --separator: #2d3033;
 
   --accent: #ffb454;
   --accent-foreground: #0a0a0a;

@@ -38,7 +38,10 @@ export function AddServerModal({ onClose, onCreated }) {
     <Modal>
       <Modal.Backdrop isOpen onOpenChange={(open) => !open && onClose()}>
         <Modal.Container>
-          <Modal.Dialog className="sm:max-w-190">
+          {/* Explicit border, not just relying on the surface/background
+              color gap — a guaranteed visible edge regardless of exact
+              contrast. */}
+          <Modal.Dialog className="sm:max-w-190 border border-border shadow-2xl">
             <Modal.CloseTrigger />
             <Modal.Header>
               <Modal.Heading>{created ? "Server registered" : "Add a server"}</Modal.Heading>
