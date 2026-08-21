@@ -5,7 +5,9 @@
 // style rather than conditional Tailwind class names, since the value is
 // computed at runtime and Tailwind's build-time class scanner can't see
 // dynamically-interpolated class names.
-function scoreColorVar(value) {
+// Exported for reuse anywhere else a score needs the same color coding
+// (currently DashboardPage's per-server attention list).
+export function scoreColorVar(value) {
   if (value >= 90) return "var(--success)";
   if (value >= 70) return "var(--warning)";
   return "var(--danger)";

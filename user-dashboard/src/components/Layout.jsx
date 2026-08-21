@@ -3,6 +3,17 @@ import { Button } from "@heroui/react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
+function DashboardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="shrink-0">
+      <rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x="13" y="3" width="8" height="5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x="13" y="10" width="8" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
 function ServerIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="shrink-0">
@@ -10,6 +21,21 @@ function ServerIcon() {
       <rect x="3" y="14" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
       <circle cx="7" cy="7" r="0.75" fill="currentColor" />
       <circle cx="7" cy="17" r="0.75" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="shrink-0">
+      <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -38,7 +64,11 @@ function LogoutIcon() {
   );
 }
 
-const NAV_ITEMS = [{ to: "/servers", label: "Servers", end: true, Icon: ServerIcon }];
+const NAV_ITEMS = [
+  { to: "/dashboard", label: "Dashboard", end: true, Icon: DashboardIcon },
+  { to: "/servers", label: "Servers", end: true, Icon: ServerIcon },
+  { to: "/profile", label: "Profile", end: true, Icon: ProfileIcon },
+];
 
 const COLLAPSED_KEY = "servermend_sidebar_collapsed";
 
