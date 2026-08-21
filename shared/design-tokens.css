@@ -12,43 +12,33 @@
  * Diff). See docs/design-system.md for the full rationale, usage
  * guidance, and component patterns built on top of these tokens.
  *
- * Palette concept ("Secure Teal"): deep teal as the primary interactive
- * color — reads as trust/calm/precision without the generic indigo-on-white
- * "AI SaaS" look — reserving crimson strictly for critical severity so it
- * never gets diluted by also being a default UI accent. A separate deep
- * navy is used only for the brand wordmark, giving the identity its own
- * mark distinct from interactive elements.
+ * --high/--high-dim are the one addition beyond the specified palette:
+ * the backend reports four finding-severity levels
+ * (critical/high/medium/low), not just ok/fail, so "high" needs its own
+ * color. Derived as a bridge between --amber and --fail on the same warm
+ * hue family rather than introducing an unrelated color.
  */
 
 :root {
   /* Surfaces & text */
-  --bg: #eef1f4;
-  --surface: #ffffff;
-  --border: #d7dee3;
-  --text: #10192b;
-  --text-muted: #58697a;
-  --track: #e1e7ec; /* progress/bar background, e.g. score bars */
+  --ink: #0e1116; /* primary background (near-black) */
+  --panel: #151b23; /* card/panel background */
+  --panel-2: #1b222c; /* secondary panel background (hover states, nested surfaces) */
+  --line: #28303b; /* borders/dividers */
+  --text: #cbd5df; /* primary body text */
+  --muted: #8494a4; /* secondary/dim text */
 
-  /* Brand */
-  --brand-ink: #0b2545; /* wordmark only — never used for interactive elements */
-  --accent: #0d7d74; /* primary buttons, links, focus */
-  --accent-contrast: #ffffff; /* text/icon color placed on --accent */
+  /* Brand/accent */
+  --amber: #ffb454; /* primary brand/accent — links, buttons, highlights */
+  --amber-dim: rgba(255, 180, 84, 0.12); /* amber tint background (tags, dashed borders) */
 
-  /* Finding severity scale (SeverityPill and similar). Always pair with a
-     text label, never color alone — see docs/design-system.md. */
-  --critical: #c31c38;
-  --high: #bd5a12;
-  --medium: #9c7209;
-  --low: #47576b;
-  --info: #14708c; /* findings with no severity (informational checks) — teal-family, ties to brand */
+  /* Status */
+  --ok: #7fd962; /* success/status green */
+  --ok-dim: rgba(127, 217, 98, 0.12);
+  --fail: #f26d78; /* error/status red */
+  --fail-dim: rgba(242, 109, 120, 0.12);
 
-  /* Score/quality bands (ScoreBars and any other aggregate-percentage
-     display). A separate scale from severity above — different semantic
-     domain (a single finding's severity vs. an aggregate 0-100 score) —
-     even though --warn/--medium and --bad/--critical currently share a
-     hex value. Keep them as distinct tokens; don't collapse them even if
-     the values happen to match today. */
-  --good: #12805a;
-  --warn: #9c7209;
-  --bad: #c31c38;
+  /* Derived — see file header comment */
+  --high: #ee8b5c;
+  --high-dim: rgba(238, 139, 92, 0.12);
 }

@@ -11,35 +11,47 @@ between the two independent Vite apps).
 
 ## Color tokens
 
-**Palette concept: "Secure Teal."** Deep teal as the one primary interactive
-color — reads as trust/calm/precision for a security-repair tool without
-the generic indigo-on-white "AI SaaS" look — while crimson is reserved
-*strictly* for critical severity, never doubled as a default UI accent, so
-it keeps its alarm value. The brand wordmark uses its own deep navy
-(`--brand-ink`), distinct from the interactive teal, so the ServerMend
-mark reads as an identity rather than just another button color.
+Dark theme: near-black surfaces, a warm amber brand/accent color, and
+green/red status colors with matching low-opacity "dim" variants for tinted
+badges and banners. `--high`/`--high-dim` are the one addition beyond the
+originally-specified palette — the backend reports four finding-severity
+levels (critical/high/medium/low), not just ok/fail, so "high" needs its
+own color; it's derived as a bridge between `--amber` and `--fail` on the
+same warm hue family rather than introducing an unrelated color.
 
 | Token | Hex | Role |
 |---|---|---|
-| `--bg` | `#eef1f4` | Page background |
-| `--surface` | `#ffffff` | Cards, panels, forms |
-| `--border` | `#d7dee3` | Hairline borders, table rules |
-| `--text` | `#10192b` | Primary text |
-| `--text-muted` | `#58697a` | Secondary text, meta, labels |
-| `--track` | `#e1e7ec` | Background of a bar/progress track |
-| `--brand-ink` | `#0b2545` | Wordmark/logotype only — never used for interactive elements |
-| `--accent` | `#0d7d74` | Primary buttons, links, focus states |
-| `--accent-contrast` | `#ffffff` | Text/icon color placed on `--accent` |
+| `--ink` | `#0e1116` | Primary background (near-black) |
+| `--panel` | `#151b23` | Card/panel background |
+| `--panel-2` | `#1b222c` | Secondary panel background — hover states, nested surfaces, table-row expansion |
+| `--line` | `#28303b` | Borders/dividers |
+| `--text` | `#cbd5df` | Primary body text |
+| `--muted` | `#8494a4` | Secondary/dim text |
+| `--amber` | `#ffb454` | Primary brand/accent — links, buttons, highlights, the wordmark |
+| `--amber-dim` | `rgba(255,180,84,.12)` | Amber tint background (tags, dashed borders) |
+| `--ok` | `#7fd962` | Success/status green |
+| `--ok-dim` | `rgba(127,217,98,.12)` | Success tint background |
+| `--fail` | `#f26d78` | Error/status red |
+| `--fail-dim` | `rgba(242,109,120,.12)` | Error tint background |
+| `--high` *(derived)* | `#ee8b5c` | Bridges `--amber`→`--fail` for the "high" severity level |
+| `--high-dim` *(derived)* | `rgba(238,139,92,.12)` | High-severity tint background |
+
+**Text-on-fill rule:** dark ink text (`--ink`) on the bright/light fills
+(`--amber`, `--ok`, `--muted`), light text (`--text`) on the darker or more
+saturated ones (`--fail`, `--high`, `--line`). This is why buttons (amber
+fill) use `color: var(--ink)` rather than white, and why `.pill-info`
+(background `--line`, quite dark) uses `color: var(--text)` while
+`.pill-medium` (background `--amber`) uses `color: var(--ink)`.
 
 ### Finding severity scale
 
-| Token | Hex | Meaning |
-|---|---|---|
-| `--critical` | `#c31c38` | crimson |
-| `--high` | `#bd5a12` | burnt orange |
-| `--medium` | `#9c7209` | deep amber |
-| `--low` | `#47576b` | slate |
-| `--info` | `#14708c` | teal-blue, ties to `--accent`'s family — findings with no severity (informational checks like `open-ports-scan`) |
+| Token | Meaning |
+|---|---|
+| `--fail` | critical |
+| `--high` | high |
+| `--amber` | medium |
+| `--muted` | low |
+| `--line` | info — findings with no severity (informational checks like `open-ports-scan`) |
 
 **Never rely on color alone to convey severity.** `SeverityPill` always
 renders the text label ("Critical", "High", …) alongside the color — the
@@ -50,18 +62,16 @@ for instance) must follow the same rule.
 
 ### Score/quality bands
 
-| Token | Hex | Threshold (of a 0–100 score) |
-|---|---|---|
-| `--good` | `#12805a` | ≥ 90 |
-| `--warn` | `#9c7209` | 70–89 |
-| `--bad` | `#c31c38` | < 70 |
+| Token | Threshold (of a 0–100 score) |
+|---|---|
+| `--ok` | ≥ 90 |
+| `--amber` | 70–89 |
+| `--fail` | < 70 |
 
-This is a **separate scale from severity**, even though `--warn`/`--medium`
-and `--bad`/`--critical` currently share a hex value. They're different
-semantic domains — one finding's severity vs. an aggregate percentage — so
-they're kept as distinct tokens rather than collapsed into one. If a future
-redesign wants the two scales to diverge visually, changing one shouldn't
-require touching the other.
+This reuses the same status tokens as the severity scale above (deliberately
+— an aggregate score and a finding severity are both "how bad is this," so
+sharing `--ok`/`--amber`/`--fail` keeps the vocabulary small) rather than
+maintaining a separate parallel set of "good/warn/bad" tokens.
 
 ## Typography
 
@@ -74,7 +84,7 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, A
 
 - Body text: 15px, line-height 1.5.
 - `h1`: 1.5rem, 600 weight — page titles only, one per page.
-- `h2`: 1.05rem, 600 weight, `--text-muted`, uppercase with `0.03em`
+- `h2`: 1.05rem, 600 weight, `--muted`, uppercase with `0.03em`
   letter-spacing — section headers within a page (e.g. "Score", "Findings").
 - Numeric columns (scores, counts) use `font-variant-numeric: tabular-nums`
   so digits align in a column.
@@ -84,11 +94,14 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, A
 - Content is capped at `max-width: 960px`, centered, `1.5rem` padding — a
   dashboard, not a document; the cap keeps tables and cards from stretching
   edge-to-edge on wide monitors while staying full-width on narrower ones.
-- Sections are `--surface` cards: 1px `--border`, 8px radius, `1.25rem`
+- Sections are `--panel` cards: 1px `--line`, 8px radius, `1.25rem`
   padding. Use one section per logical grouping (a score panel, a findings
   table, an alert list) rather than one undifferentiated page of content.
 - Sibling spacing is layout-driven (flex/grid `gap`), not per-element
   margins — avoids the classic collapsing/doubling margin bug.
+- Flat, no shadows — depth comes from the `ink`/`panel`/`panel-2` step
+  sequence, not box-shadow. Keep it that way; don't introduce shadows for
+  one component and not others.
 
 ## Component patterns
 
@@ -96,29 +109,38 @@ Reuse these patterns rather than inventing new ones when admin-dashboard
 needs the same kind of information:
 
 - **Severity pill** (`SeverityPill`) — a small rounded-pill badge, solid
-  severity color, white text, the severity name spelled out. `null`
-  severity renders as an "Info" pill in `--info`.
+  severity color, the severity name spelled out, text color per the
+  text-on-fill rule above. `null` severity renders as an "Info" pill on
+  `--line`.
 - **Score display** (`ScoreBars`) — a ringed overall-score circle (border
-  color from the good/warn/bad band) next to a list of per-category bars,
-  each bar's fill width equal to its percentage and colored by the same
-  band logic. Categories sorted alphabetically for stable ordering across
-  reloads.
-- **Data tables** — uppercase, `--text-muted`, `0.78rem` letter-spaced
-  column headers; `1px` `--border` row rules; no zebra striping (the
-  severity pill and status text already carry enough visual weight per
-  row). Clickable rows (e.g. a failing finding that expands remediation
-  guidance) get a `:hover` background of `--bg` and `cursor: pointer`.
-- **Buttons** — solid `--accent` fill with `--accent-contrast` text for
-  primary actions; a bordered "ghost" variant (transparent fill,
-  `--text-muted` text, `--border` outline) for secondary actions like
-  "Log out". Hover is `filter: brightness(0.92)` — works for any accent
-  color without a separate hover token. Disabled state is `opacity: 0.6`
-  plus `cursor: default` — no
-  separate disabled color token.
-- **Empty/error states** — empty states are a single `--text-muted`
-  sentence explaining what to do next (never a bare "No data"); errors are
-  a `--critical`-on-`#fdecec` banner with the actual message from the API,
-  not a generic "Something went wrong."
+  color from the `--ok`/`--amber`/`--fail` band) next to a list of
+  per-category bars, each bar's fill width equal to its percentage and
+  colored by the same band logic, on a `--line` track. Categories sorted
+  alphabetically for stable ordering across reloads.
+- **Data tables** — uppercase, `--muted`, `0.78rem` letter-spaced column
+  headers; `1px` `--line` row rules; no zebra striping (the severity pill
+  and status text already carry enough visual weight per row). Clickable
+  rows (e.g. a failing finding that expands remediation guidance) get a
+  `:hover` background of `--panel-2` and `cursor: pointer` — a lift, not a
+  darkening, since darkening a hover state reads as "nothing happened" on
+  a dark theme.
+- **Form inputs** — must have an explicit `background: var(--panel-2)` and
+  `color: var(--text)`. Native form controls default to a light background
+  regardless of page theme, so omitting this is a real bug, not a style
+  nicety — it renders as a broken white box on the dark page. Focus state
+  is a 2px `--amber` outline.
+- **Buttons** — solid `--amber` fill with `--ink` text (not white — amber
+  is a bright fill) for primary actions; a bordered "ghost" variant
+  (transparent fill, `--muted` text, `--line` outline) for secondary
+  actions like "Log out". Hover is `filter: brightness(0.92)` — works for
+  any accent color without a separate hover token. Disabled state is
+  `opacity: 0.6` plus `cursor: default` — no separate disabled color
+  token.
+- **Empty/error states** — empty states are a single `--muted` sentence
+  explaining what to do next (never a bare "No data"); errors are a
+  `--fail`-on-`--fail-dim` banner with the actual message from the API,
+  not a generic "Something went wrong" — this is exactly what the `-dim`
+  tokens are for.
 
 ## Applying this to admin-dashboard
 
