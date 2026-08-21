@@ -75,12 +75,19 @@ maintaining a separate parallel set of "good/warn/bad" tokens.
 
 ## Typography
 
-System font stack — no webfont loading, so both apps stay fast and
-dependency-free:
+Inter, self-hosted via `@fontsource/inter` (not a Google Fonts `<link>`) —
+weights 400/500/600/700, imported once in `main.jsx` before `index.css`.
+Self-hosted rather than CDN-linked so the app has no external runtime
+dependency for its own typeface, consistent with the rest of this project
+staying dependency-light. System-font fallback stays in place in case the
+package ever fails to load:
 
 ```css
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 ```
+
+admin-dashboard should `npm install @fontsource/inter` and import the same
+four weight files rather than linking a CDN font.
 
 - Body text: 15px, line-height 1.5.
 - `h1`: 1.5rem, 600 weight — page titles only, one per page.
@@ -129,6 +136,13 @@ needs the same kind of information:
   regardless of page theme, so omitting this is a real bug, not a style
   nicety — it renders as a broken white box on the dark page. Focus state
   is a 2px `--amber` outline.
+- **Password field** (`PasswordField`) — a password input with a show/hide
+  eye-icon toggle absolutely positioned inside the field (`.password-field`
+  wrapper, `position: relative`; the input gets `padding-right` to leave
+  room for the icon). Icons are inline SVG, not an icon library — this
+  project has none and two glyphs don't justify adding one. The toggle is
+  a real `<button type="button">` with `aria-label`/`aria-pressed`
+  reflecting the current state, not a bare clickable `<span>`.
 - **Buttons** — solid `--amber` fill with `--ink` text (not white — amber
   is a bright fill) for primary actions; a bordered "ghost" variant
   (transparent fill, `--muted` text, `--line` outline) for secondary

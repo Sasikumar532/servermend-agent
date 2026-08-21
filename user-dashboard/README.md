@@ -25,8 +25,9 @@ user-dashboard/
     │   ├── SeverityPill.jsx        # critical/high/medium/low/info badge
     │   ├── ScoreBars.jsx            # overall ring + per-category bars
     │   ├── FindingsTable.jsx         # sortable-by-status table, on-demand remediation
-    │   ├── ProtectedRoute.jsx         # redirects to /login when signed out
-    │   └── Layout.jsx                  # header + logout, wraps authenticated pages
+    │   ├── PasswordField.jsx          # password input with show/hide eye-icon toggle
+    │   ├── ProtectedRoute.jsx           # redirects to /login when signed out
+    │   └── Layout.jsx                    # header + logout, wraps authenticated pages
     └── pages/
         ├── LoginPage.jsx, SignupPage.jsx
         ├── ServerListPage.jsx           # GET /servers

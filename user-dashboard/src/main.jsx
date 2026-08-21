@@ -1,6 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+// Self-hosted (not a Google Fonts <link>) so the app has no external
+// runtime dependency for its typeface — matches the rest of this project
+// staying dependency-light rather than reaching out to a CDN on load.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
 import "./index.css";
 
 createRoot(document.getElementById("root")).render(

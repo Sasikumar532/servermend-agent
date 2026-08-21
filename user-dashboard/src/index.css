@@ -34,7 +34,7 @@ body {
   margin: 0;
   background: var(--ink);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -198,6 +198,39 @@ button:disabled {
 }
 
 .auth-form input:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 2.4rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.3rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0.3rem;
+  color: var(--muted);
+}
+
+.password-toggle:hover:not(:disabled) {
+  filter: none; /* override the generic button:hover brightness filter — this button has no fill to brighten */
+  color: var(--text);
+}
+
+.password-toggle:focus-visible {
   outline: 2px solid var(--amber);
   outline-offset: 1px;
 }

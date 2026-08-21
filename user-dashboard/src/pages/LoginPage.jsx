@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { PasswordField } from "../components/PasswordField";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -34,10 +35,7 @@ export function LoginPage() {
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </label>
+        <PasswordField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button type="submit" disabled={submitting}>
           {submitting ? "Logging in…" : "Log in"}
         </button>
