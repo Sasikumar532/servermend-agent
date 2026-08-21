@@ -173,7 +173,7 @@ needs the same kind of information:
   not a generic "Something went wrong" — this is exactly what the `-dim`
   tokens are for.
 - **Modal** (`Modal`) — centered overlay dialog: `rgba` `--ink` scrim,
-  `--panel` card capped at `480px`, Escape-to-close, click-outside-to-close
+  `--panel` card capped at `640px`, Escape-to-close, click-outside-to-close
   (an inner `stopPropagation` keeps clicks inside the card from closing
   it), and a body scroll lock for as long as it's open. Use a modal for a
   short-lived, one-off action that doesn't deserve its own URL/back-button

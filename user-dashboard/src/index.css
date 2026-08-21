@@ -286,7 +286,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-width: 420px;
+  /* no max-width — its only current use (AddServerModal) already lives
+     inside .modal's own width cap */
 }
 
 .inline-form label {
@@ -757,7 +758,7 @@ table {
 
 .modal {
   width: 100%;
-  max-width: 480px;
+  max-width: 640px;
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
   background: var(--panel);
