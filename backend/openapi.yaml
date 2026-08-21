@@ -55,6 +55,16 @@ components:
         lastSeenAt: { type: string, format: date-time, nullable: true }
         score: { $ref: "#/components/schemas/Score" }
 
+    UserProfile:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        firstName: { type: string, nullable: true }
+        lastName: { type: string, nullable: true }
+        mobileNumber: { type: string, nullable: true }
+        companyName: { type: string, nullable: true }
+        position: { type: string, nullable: true }
+
     Error:
       type: object
       properties:
@@ -134,6 +144,46 @@ paths:
               schema:
                 type: object
                 properties: { token: { type: string } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /me:
+    get:
+      summary: Get the authenticated user's profile
+      security: [{ userJwt: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+    patch:
+      summary: >
+        Update profile details (name, mobile number, company, position).
+        Email is not editable here — it's the sign-in identity. Any
+        omitted field is left unchanged; any field present in the body
+        (including as an empty string) is set.
+      security: [{ userJwt: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                mobileNumber: { type: string }
+                companyName: { type: string }
+                position: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "400": { description: "A provided field was not a string" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 
