@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Button, Input, Label, TextField } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { PasswordField } from "../components/PasswordField";
@@ -38,26 +39,32 @@ export function SignupPage() {
   }
 
   return (
-    <div className="auth-page">
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <h1>Sign up</h1>
-        {error && <p className="form-error">{error}</p>}
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
-        </label>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <form
+        className="flex w-80 flex-col gap-4 rounded-xl border border-border bg-surface p-8"
+        onSubmit={handleSubmit}
+      >
+        <h1 className="text-xl font-semibold">Sign up</h1>
+        {error && <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
+        <TextField value={email} onChange={setEmail} name="email">
+          <Label>Email</Label>
+          <Input type="email" placeholder="you@example.com" autoFocus />
+        </TextField>
         <PasswordField
           label="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={setPassword}
           minLength={MIN_PASSWORD_LENGTH}
           required
         />
-        <button type="submit" disabled={submitting}>
+        <Button type="submit" isDisabled={submitting}>
           {submitting ? "Creating account…" : "Sign up"}
-        </button>
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Log in</Link>
+        </Button>
+        <p className="text-sm text-muted">
+          Already have an account?{" "}
+          <Link to="/login" className="text-accent hover:underline">
+            Log in
+          </Link>
         </p>
       </form>
     </div>

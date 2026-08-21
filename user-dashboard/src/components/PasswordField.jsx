@@ -1,8 +1,6 @@
 import { useState } from "react";
+import { Input, Label, TextField } from "@heroui/react";
 
-// Inline SVGs rather than an icon library — this project stays
-// dependency-light (no icon package anywhere else either), and two small
-// eye/eye-off glyphs aren't worth a dependency.
 function EyeIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -35,24 +33,26 @@ function EyeOffIcon() {
   );
 }
 
+// Built on HeroUI's TextField/Input rather than a documented endContent
+// slot — HeroUI v3's Input docs don't show one, so the toggle is a plain
+// absolutely-positioned button over the input instead.
 export function PasswordField({ label, value, onChange, minLength, required, autoFocus }) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <label>
-      {label}
-      <div className="password-field">
-        <input
+    <TextField value={value} onChange={onChange} name="password">
+      <Label>{label}</Label>
+      <div className="relative">
+        <Input
           type={visible ? "text" : "password"}
-          value={value}
-          onChange={onChange}
           minLength={minLength}
           required={required}
           autoFocus={autoFocus}
+          className="pr-10"
         />
         <button
           type="button"
-          className="password-toggle"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
@@ -60,6 +60,6 @@ export function PasswordField({ label, value, onChange, minLength, required, aut
           {visible ? <EyeOffIcon /> : <EyeIcon />}
         </button>
       </div>
-    </label>
+    </TextField>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Table } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { getReports } from "../api/servers";
 
@@ -22,36 +23,38 @@ export function ServerReportsPage() {
     };
   }, [serverId]);
 
-  if (error) return <p className="form-error">{error}</p>;
-  if (reports === null) return <p>Loading…</p>;
+  if (error) return <p className="text-sm text-danger">{error}</p>;
+  if (reports === null) return <p className="text-sm text-muted">Loading…</p>;
 
   return (
-    <div>
-      <Link to={`/servers/${serverId}`} className="back-link">
+    <div className="flex flex-col gap-4">
+      <Link to={`/servers/${serverId}`} className="text-sm text-muted hover:text-foreground">
         &larr; Server
       </Link>
-      <h1>Report history</h1>
+      <h1 className="text-2xl font-semibold">Report history</h1>
       {reports.length === 0 ? (
-        <p className="empty-state">No reports received yet.</p>
+        <p className="text-sm text-muted">No reports received yet.</p>
       ) : (
-        <table className="server-list-table">
-          <thead>
-            <tr>
-              <th>Received</th>
-              <th>Agent version</th>
-              <th>Overall score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map((report) => (
-              <tr key={report._id}>
-                <td>{new Date(report.receivedAt).toLocaleString()}</td>
-                <td>{report.agentVersion}</td>
-                <td>{report.score.overall}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content aria-label="Report history" className="min-w-120">
+              <Table.Header>
+                <Table.Column isRowHeader>Received</Table.Column>
+                <Table.Column>Agent version</Table.Column>
+                <Table.Column>Overall score</Table.Column>
+              </Table.Header>
+              <Table.Body>
+                {reports.map((report) => (
+                  <Table.Row key={report._id}>
+                    <Table.Cell>{new Date(report.receivedAt).toLocaleString()}</Table.Cell>
+                    <Table.Cell>{report.agentVersion}</Table.Cell>
+                    <Table.Cell>{report.score.overall}</Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
       )}
     </div>
   );

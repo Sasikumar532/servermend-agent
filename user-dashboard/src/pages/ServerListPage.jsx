@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Button, Table } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { listServers } from "../api/servers";
 import { AddServerModal } from "../components/AddServerModal";
@@ -27,48 +28,56 @@ export function ServerListPage() {
     };
   }, [refreshKey]);
 
-  if (error) return <p className="form-error">{error}</p>;
-  if (servers === null) return <p>Loading…</p>;
+  if (error) return <p className="text-sm text-danger">{error}</p>;
+  if (servers === null) return <p className="text-sm text-muted">Loading…</p>;
 
   return (
-    <div>
-      <div className="page-header">
-        <h1>Servers</h1>
-        <button type="button" onClick={() => setShowAddModal(true)}>
-          Add server
-        </button>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Servers</h1>
+        <Button onPress={() => setShowAddModal(true)}>Add server</Button>
       </div>
       {servers.length === 0 ? (
-        <p className="empty-state">
+        <p className="text-sm text-muted">
           No servers registered yet.{" "}
-          <button type="button" className="link-button" onClick={() => setShowAddModal(true)}>
+          <button
+            type="button"
+            className="text-accent hover:underline"
+            onClick={() => setShowAddModal(true)}
+          >
             Add your first server
           </button>{" "}
           to get started.
         </p>
       ) : (
-        <table className="server-list-table">
-          <thead>
-            <tr>
-              <th>Hostname</th>
-              <th>Score</th>
-              <th>Agent version</th>
-              <th>Last seen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {servers.map((server) => (
-              <tr key={server.serverId}>
-                <td>
-                  <Link to={`/servers/${server.serverId}`}>{server.hostname ?? server.serverId}</Link>
-                </td>
-                <td>{server.score ? server.score.overall : "—"}</td>
-                <td>{server.agentVersion ?? "—"}</td>
-                <td>{server.lastSeenAt ? new Date(server.lastSeenAt).toLocaleString() : "never"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content aria-label="Servers" className="min-w-160">
+              <Table.Header>
+                <Table.Column isRowHeader>Hostname</Table.Column>
+                <Table.Column>Score</Table.Column>
+                <Table.Column>Agent version</Table.Column>
+                <Table.Column>Last seen</Table.Column>
+              </Table.Header>
+              <Table.Body>
+                {servers.map((server) => (
+                  <Table.Row key={server.serverId}>
+                    <Table.Cell>
+                      <Link to={`/servers/${server.serverId}`} className="text-accent hover:underline">
+                        {server.hostname ?? server.serverId}
+                      </Link>
+                    </Table.Cell>
+                    <Table.Cell>{server.score ? server.score.overall : "—"}</Table.Cell>
+                    <Table.Cell>{server.agentVersion ?? "—"}</Table.Cell>
+                    <Table.Cell>
+                      {server.lastSeenAt ? new Date(server.lastSeenAt).toLocaleString() : "never"}
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
       )}
       {showAddModal && (
         <AddServerModal onClose={() => setShowAddModal(false)} onCreated={() => setRefreshKey((k) => k + 1)} />

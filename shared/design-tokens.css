@@ -1,44 +1,31 @@
 /*
- * ServerMend design tokens — canonical source.
+ * ServerMend brand accent override for HeroUI.
+ *
+ * As of the HeroUI migration, the dashboards no longer hand-roll their own
+ * token set — HeroUI's own `@import "@heroui/styles"` defines the full
+ * palette (bg-background, bg-surface, text-muted, border-border,
+ * bg-{accent,success,warning,danger}, etc. — see docs/design-system.md
+ * for the reference). This file is just the one deliberate brand touch on
+ * top of HeroUI's stock palette: a custom accent color instead of
+ * HeroUI's default, applied for both light and dark (`[data-theme]`
+ * variants included since HeroUI's theme hook sets both the class and the
+ * data attribute — see docs/design-system.md's Dark mode section).
  *
  * Both user-dashboard/src/index.css and admin-dashboard/src/index.css
- * declare this exact :root block themselves (each dashboard is an
- * independent Vite app with its own build root, so this file isn't
- * imported directly — copying it in is the mechanism). Keep the three
- * copies byte-identical by hand, the same pattern already used elsewhere
- * in this repo for cross-language contracts that can't share a package
- * (e.g. backend/openapi.yaml vs. the Go agent's structs, or
- * backend/src/services/baselineDiff.js vs. agent/baseline/baseline.go's
- * Diff). See docs/design-system.md for the full rationale, usage
- * guidance, and component patterns built on top of these tokens.
- *
- * --high/--high-dim are the one addition beyond the specified palette:
- * the backend reports four finding-severity levels
- * (critical/high/medium/low), not just ok/fail, so "high" needs its own
- * color. Derived as a bridge between --amber and --fail on the same warm
- * hue family rather than introducing an unrelated color.
+ * append this block after their own `@import "tailwindcss"; @import
+ * "@heroui/styles";` lines — copied by hand, the same manual-mirror
+ * pattern used elsewhere in this repo for things that can't share a
+ * package (e.g. backend/openapi.yaml vs. the Go agent's structs).
  */
 
-:root {
-  /* Surfaces & text */
-  --ink: #0e1116; /* primary background (near-black) */
-  --panel: #151b23; /* card/panel background */
-  --panel-2: #1b222c; /* secondary panel background (hover states, nested surfaces) */
-  --line: #28303b; /* borders/dividers */
-  --text: #cbd5df; /* primary body text */
-  --muted: #8494a4; /* secondary/dim text */
+:root,
+[data-theme="light"] {
+  --accent: #ffb454;
+  --accent-foreground: #0e1116;
+}
 
-  /* Brand/accent */
-  --amber: #ffb454; /* primary brand/accent — links, buttons, highlights */
-  --amber-dim: rgba(255, 180, 84, 0.12); /* amber tint background (tags, dashed borders) */
-
-  /* Status */
-  --ok: #7fd962; /* success/status green */
-  --ok-dim: rgba(127, 217, 98, 0.12);
-  --fail: #f26d78; /* error/status red */
-  --fail-dim: rgba(242, 109, 120, 0.12);
-
-  /* Derived — see file header comment */
-  --high: #ee8b5c;
-  --high-dim: rgba(238, 139, 92, 0.12);
+.dark,
+[data-theme="dark"] {
+  --accent: #ffb454;
+  --accent-foreground: #0e1116;
 }

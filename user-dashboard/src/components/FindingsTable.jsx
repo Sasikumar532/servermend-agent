@@ -1,14 +1,25 @@
 import { Fragment, useState } from "react";
+import { Button } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { getRemediation } from "../api/servers";
 import { SeverityPill } from "./SeverityPill";
 
 // Failing findings first, then errors (checks that couldn't run — still
-// worth an operator's attention), then info, then pass — pass is what an
-// operator cares about least, so it goes last rather than sorted with
-// everything else alphabetically.
+// worth an operator's attention), then info, then pass.
 const STATUS_ORDER = { fail: 0, error: 1, info: 2, pass: 3 };
 
+const STATUS_TEXT_CLASS = {
+  fail: "text-danger",
+  pass: "text-success",
+  error: "text-warning",
+  info: "text-muted",
+};
+
+// A plain semantic <table> (Tailwind-styled), not HeroUI's Table component
+// — the per-row expand-in-place remediation panel doesn't cleanly fit an
+// accessible data-table's fixed row/column model, and HeroUI's docs don't
+// confirm support for it. ServerListPage and ServerReportsPage, which are
+// plain non-expanding grids, use the real Table component instead.
 export function FindingsTable({ serverId, findings }) {
   const [expandedId, setExpandedId] = useState(null);
   const [remediation, setRemediation] = useState({});
@@ -38,66 +49,82 @@ export function FindingsTable({ serverId, findings }) {
   }
 
   if (findings.length === 0) {
-    return <p className="empty-state">No findings in the latest report.</p>;
+    return <p className="text-sm text-muted">No findings in the latest report.</p>;
   }
 
   return (
-    <table className="findings-table">
-      <thead>
-        <tr>
-          <th>Status</th>
-          <th>Severity</th>
-          <th>Category</th>
-          <th>Check</th>
-          <th>Detail</th>
-        </tr>
-      </thead>
-      <tbody>
-        {sorted.map((finding) => {
-          const isFailing = finding.status === "fail";
-          return (
-            <Fragment key={finding.id}>
-              <tr
-                className={`finding-row finding-row-${finding.status}${isFailing ? " finding-row-clickable" : ""}`}
-                onClick={isFailing ? () => toggle(finding.id) : undefined}
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-160 border-collapse text-sm">
+        <thead>
+          <tr>
+            {["Status", "Severity", "Category", "Check", "Detail", ""].map((heading) => (
+              <th
+                key={heading || "actions"}
+                className="border-b border-border px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted"
               >
-                <td className={`finding-status finding-status-${finding.status}`}>{finding.status}</td>
-                <td>
-                  <SeverityPill severity={finding.severity} />
-                </td>
-                <td>{finding.category}</td>
-                <td>
-                  {finding.title || finding.id}
-                  {!finding.scored && (
-                    <span className="unscored-badge" title="No matching check definition on the backend">
-                      unscored
-                    </span>
-                  )}
-                </td>
-                <td className="finding-detail">{finding.detail}</td>
-              </tr>
-              {expandedId === finding.id && (
-                <tr className="remediation-row">
-                  <td colSpan={5}>
-                    <RemediationPanel state={remediation[finding.id]} />
+                {heading}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((finding) => {
+            const isFailing = finding.status === "fail";
+            return (
+              <Fragment key={finding.id}>
+                <tr className="hover:bg-default/50">
+                  <td
+                    className={`border-b border-border px-3 py-2 align-top text-xs font-semibold uppercase ${STATUS_TEXT_CLASS[finding.status]}`}
+                  >
+                    {finding.status}
+                  </td>
+                  <td className="border-b border-border px-3 py-2 align-top">
+                    <SeverityPill severity={finding.severity} />
+                  </td>
+                  <td className="border-b border-border px-3 py-2 align-top">{finding.category}</td>
+                  <td className="border-b border-border px-3 py-2 align-top">
+                    {finding.title || finding.id}
+                    {!finding.scored && (
+                      <span
+                        className="ml-2 rounded border border-border px-1 text-[10px] text-muted"
+                        title="No matching check definition on the backend"
+                      >
+                        unscored
+                      </span>
+                    )}
+                  </td>
+                  <td className="border-b border-border px-3 py-2 align-top text-muted">{finding.detail}</td>
+                  <td className="border-b border-border px-3 py-2 align-top">
+                    {isFailing && (
+                      <Button size="sm" variant="tertiary" onPress={() => toggle(finding.id)}>
+                        {expandedId === finding.id ? "Hide" : "Fix"}
+                      </Button>
+                    )}
                   </td>
                 </tr>
-              )}
-            </Fragment>
-          );
-        })}
-      </tbody>
-    </table>
+                {expandedId === finding.id && (
+                  <tr>
+                    <td colSpan={6} className="border-b border-border bg-default/30 px-3 py-3">
+                      <RemediationPanel state={remediation[finding.id]} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
 function RemediationPanel({ state }) {
-  if (!state || state.loading) return <p className="remediation-loading">Generating remediation guidance…</p>;
-  if (state.error) return <p className="remediation-error">{state.error}</p>;
+  if (!state || state.loading) return <p className="text-sm text-muted">Generating remediation guidance…</p>;
+  if (state.error) return <p className="text-sm text-danger">{state.error}</p>;
   return (
-    <div className="remediation-panel">
-      <p className="remediation-text">{state.text}</p>
-      <span className="remediation-source">source: {state.source}</span>
+    <div className="flex flex-col gap-1">
+      <p className="whitespace-pre-wrap text-sm">{state.text}</p>
+      <span className="text-xs text-muted">source: {state.source}</span>
     </div>
   );
 }

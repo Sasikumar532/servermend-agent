@@ -1,13 +1,11 @@
-const LABELS = {
-  critical: "Critical",
-  high: "High",
-  medium: "Medium",
-  low: "Low",
-};
+import { Chip } from "@heroui/react";
+import { severityChipProps } from "../lib/severity";
 
-// severity is null for informational checks (e.g. open-ports-scan) that
-// never carry a severity — see backend/src/models/CheckDefinition.js.
 export function SeverityPill({ severity }) {
-  if (!severity) return <span className="pill pill-info">Info</span>;
-  return <span className={`pill pill-${severity}`}>{LABELS[severity]}</span>;
+  const { color, variant, label } = severityChipProps(severity);
+  return (
+    <Chip color={color} variant={variant}>
+      {label}
+    </Chip>
+  );
 }
