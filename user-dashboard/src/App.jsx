@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { AuthProvider } from "./auth/AuthContext";
 import { LoginPage } from "./pages/LoginPage";
 import { ServerDetailPage } from "./pages/ServerDetailPage";
@@ -12,6 +13,10 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        {/* Fixed-position, rendered once outside <Routes> so it stays put
+            across every page — including /login and /signup, which sit
+            outside the sidebar Layout entirely. */}
+        <ThemeToggle />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

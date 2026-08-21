@@ -167,6 +167,14 @@ same kind of information. Import everything from `@heroui/react`.
   same reason: precise compact icon+label sizing that gets absolutely
   positioned over a `<pre>` block in places, which is simpler without a
   component library's own padding defaults to fight.
+- **Theme toggle** (`ThemeToggle`) — a light/dark/system three-way switch
+  built on HeroUI's own `useTheme("system")` hook (`{ theme, setTheme }`
+  — it already persists the choice to `localStorage` and applies both the
+  class and `data-theme` attribute to `<html>`, so this component has no
+  storage logic of its own). Fixed-position top-right, rendered once at
+  the `App` root outside `<Routes>` rather than inside `Layout`, so it
+  stays in the same spot on every page including `/login` and `/signup`,
+  which sit outside the sidebar shell entirely.
 - **Data tables (plain grids)** — HeroUI's `Table` (`Table.ScrollContainer`
   → `Table.Content` → `Table.Header`/`Table.Column` + `Table.Body`/`Table.Row`/`Table.Cell`).
   First column gets `isRowHeader`. Used by `ServerListPage` and
