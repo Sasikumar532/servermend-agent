@@ -1,15 +1,19 @@
 /*
- * ServerMend brand accent override for HeroUI.
+ * ServerMend theme override for HeroUI.
  *
  * As of the HeroUI migration, the dashboards no longer hand-roll their own
  * token set — HeroUI's own `@import "@heroui/styles"` defines the full
- * palette (bg-background, bg-surface, text-muted, border-border,
- * bg-{accent,success,warning,danger}, etc. — see docs/design-system.md
- * for the reference). This file is just the one deliberate brand touch on
- * top of HeroUI's stock palette: a custom accent color instead of
- * HeroUI's default, applied for both light and dark (`[data-theme]`
- * variants included since HeroUI's theme hook sets both the class and the
- * data attribute — see docs/design-system.md's Dark mode section).
+ * palette (see docs/design-system.md for the reference). This file is the
+ * deliberate ServerMend customization on top of it:
+ *
+ * - Light mode: HeroUI's stock palette, plus a warm amber accent instead
+ *   of HeroUI's default.
+ * - Dark mode: a genuine near-black "terminal" palette (not just HeroUI's
+ *   stock dark grays), paired with the same amber accent — reads as an
+ *   amber-phosphor terminal. success/warning/danger are deliberately left
+ *   as HeroUI's own defaults — those are tuned for accessible contrast,
+ *   and redefining them risks a mistake this environment can't visually
+ *   catch.
  *
  * Both user-dashboard/src/index.css and admin-dashboard/src/index.css
  * append this block after their own `@import "tailwindcss"; @import
@@ -26,6 +30,18 @@
 
 .dark,
 [data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #e4e4e4;
+  --surface: #111214;
+  --surface-foreground: #e4e4e4;
+  --overlay: #050505;
+  --overlay-foreground: #e4e4e4;
+  --default: #1c1e21;
+  --default-foreground: #e4e4e4;
+  --muted: #7d8280;
+  --border: #24272a;
+  --separator: #24272a;
+
   --accent: #ffb454;
-  --accent-foreground: #0e1116;
+  --accent-foreground: #0a0a0a;
 }

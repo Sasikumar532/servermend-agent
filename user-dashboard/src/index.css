@@ -1,21 +1,35 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-/* Brand accent override — HeroUI's own color system (see docs/design-system.md
-   for the full token reference: bg-background, bg-surface, text-muted,
-   border-border, bg-{accent,success,warning,danger}). Everything else in
-   this app uses HeroUI's stock palette; this is the one deliberate
-   ServerMend brand touch on top of it. */
+/* Light mode: HeroUI's stock palette, plus the one brand touch — a warm
+   amber accent instead of HeroUI's default. */
 :root,
 [data-theme="light"] {
   --accent: #ffb454;
   --accent-foreground: #0e1116;
 }
 
+/* Dark mode: a genuine near-black "terminal" palette (not just HeroUI's
+   stock dark grays) paired with the amber accent — reads as an
+   amber-phosphor terminal. success/warning/danger are deliberately left
+   as HeroUI's own defaults: those are tuned for accessible contrast, and
+   redefining them risks a mistake this environment can't visually catch. */
 .dark,
 [data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #e4e4e4;
+  --surface: #111214;
+  --surface-foreground: #e4e4e4;
+  --overlay: #050505;
+  --overlay-foreground: #e4e4e4;
+  --default: #1c1e21;
+  --default-foreground: #e4e4e4;
+  --muted: #7d8280;
+  --border: #24272a;
+  --separator: #24272a;
+
   --accent: #ffb454;
-  --accent-foreground: #0e1116;
+  --accent-foreground: #0a0a0a;
 }
 
 body {

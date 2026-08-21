@@ -4,6 +4,7 @@ import { Button, Input, Label, Modal, TextField } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { createServer } from "../api/servers";
 import { CopyButton } from "./CopyButton";
+import { TerminalBlock } from "./TerminalBlock";
 
 export function AddServerModal({ onClose, onCreated }) {
   const [hostname, setHostname] = useState("");
@@ -52,27 +53,20 @@ export function AddServerModal({ onClose, onCreated }) {
                   <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 text-sm">
                     <dt className="text-muted">Server ID</dt>
                     <dd className="flex items-center gap-2">
-                      <code className="min-w-0 break-all rounded bg-background px-1.5 py-0.5">
+                      <code className="min-w-0 break-all rounded bg-background px-1.5 py-0.5 font-mono">
                         {created.serverId}
                       </code>
                       <CopyButton text={created.serverId} label="Copy server ID" />
                     </dd>
                     <dt className="text-muted">API key</dt>
                     <dd className="flex items-center gap-2">
-                      <code className="min-w-0 break-all rounded bg-background px-1.5 py-0.5">
+                      <code className="min-w-0 break-all rounded bg-background px-1.5 py-0.5 font-mono">
                         {created.apiKey}
                       </code>
                       <CopyButton text={created.apiKey} label="Copy API key" />
                     </dd>
                   </dl>
-                  <div className="relative">
-                    <pre className="overflow-x-auto rounded-md border border-border bg-background p-3 pr-28 text-[13px]">
-                      {installCommand}
-                    </pre>
-                    <div className="absolute top-2 right-2">
-                      <CopyButton text={installCommand} label="Copy install command" />
-                    </div>
-                  </div>
+                  <TerminalBlock command={installCommand} copyLabel="Copy install command" />
                 </div>
               ) : (
                 <form id="add-server-form" className="flex flex-col gap-4" onSubmit={handleSubmit}>

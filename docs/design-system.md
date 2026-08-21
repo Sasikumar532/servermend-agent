@@ -70,16 +70,24 @@ plumbing needed:
 | `bg-warning` / `text-warning-foreground` | Caution/medium status |
 | `bg-danger` / `text-danger-foreground` | Bad/critical status |
 
-**The one deliberate customization**: `--accent` / `--accent-foreground`
-are overridden to a warm amber (`#ffb454` on `#0e1116`) instead of
-HeroUI's stock accent — see [`shared/design-tokens.css`](../shared/design-tokens.css),
-copied into each dashboard's `index.css` after the two `@import` lines
-(no shared build tooling between the two independent Vite apps to import
-it directly — same manual-mirror pattern used elsewhere in this repo,
-e.g. `backend/openapi.yaml` vs. the Go agent's structs). Don't touch
-`success`/`warning`/`danger` — those are HeroUI's own accessible palette;
-redefining them risks a contrast mistake ours wouldn't catch without a
-browser.
+**Deliberate customizations** on top of HeroUI's stock palette — see
+[`shared/design-tokens.css`](../shared/design-tokens.css), copied into
+each dashboard's `index.css` after the two `@import` lines (no shared
+build tooling between the two independent Vite apps to import it
+directly — same manual-mirror pattern used elsewhere in this repo, e.g.
+`backend/openapi.yaml` vs. the Go agent's structs):
+
+- **Both themes**: `--accent`/`--accent-foreground` set to a warm amber
+  (`#ffb454`) instead of HeroUI's default.
+- **Dark mode only**: `--background`/`--surface`/`--overlay`/`--default`/
+  `--foreground`/`--muted`/`--border`/`--separator` are all overridden to
+  a genuine near-black "terminal" palette — reads as an amber-phosphor
+  terminal, not just HeroUI's stock dark grays. Light mode is untouched
+  HeroUI apart from the accent.
+
+**Never touch `success`/`warning`/`danger`** in either theme — those are
+HeroUI's own accessible palette, and redefining them risks a contrast
+mistake this environment can't visually catch.
 
 ### Finding severity scale
 
