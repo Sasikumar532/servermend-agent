@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useState } from "react";
 import { login as apiLogin, signup as apiSignup } from "../api/auth";
-import { getEmail, getToken, setSession } from "./tokenStore";
+import { getEmail, getToken, setEmail as persistEmail, setSession } from "./tokenStore";
 
 const AuthContext = createContext(undefined);
 
@@ -28,7 +28,14 @@ export function AuthProvider({ children }) {
     setEmailState(null);
   }, []);
 
-  const value = { isAuthenticated: token !== null, email, login, signup, logout };
+  // Backfills the cached email for sessions whose token was issued before
+  // email was stored at all — see the comment on tokenStore.setEmail.
+  const syncEmail = useCallback((nextEmail) => {
+    persistEmail(nextEmail);
+    setEmailState(nextEmail);
+  }, []);
+
+  const value = { isAuthenticated: token !== null, email, login, signup, logout, syncEmail };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

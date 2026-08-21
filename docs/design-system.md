@@ -233,6 +233,19 @@ same kind of information. Import everything from `@heroui/react`.
   directly.
 - **Severity/status** — `<Chip color={} variant={}>` per the severity
   table above; plain-text children auto-wrap in `Chip.Label`.
+- **Toasts** (`Toast.jsx`) — a small custom `ToastProvider`/`useToast()`,
+  not HeroUI's own `Toast` component, for one-off transient
+  success/error notices (e.g. "Profile saved." on `ProfilePage`) where a
+  full queue/action-button toast API is more than needed. Mounted once at
+  the `App` root (outermost, alongside `AuthProvider`) so any page can
+  call `useToast()` without its own provider; renders fixed
+  bottom-right (`ThemeToggle` already owns top-right), auto-dismisses
+  after 4s, and stays a `role="status"`/`aria-live="polite"` region.
+  Reach for this instead of an inline `bg-success/10`/`bg-danger/10`
+  banner specifically for **transient action feedback** (a save, a
+  copy); keep the inline banner style for **blocking state** the user
+  still needs to see after acting on it (a page failing to load, a form
+  the user hasn't fixed yet).
 - **Empty/error states** — empty states are a single `text-muted` sentence
   explaining what to do next (never a bare "No data"), and when that next
   step is an action rather than navigation, it's a plain `<button>` styled

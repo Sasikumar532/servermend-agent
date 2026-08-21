@@ -21,6 +21,19 @@ export function getEmail() {
   return currentEmail;
 }
 
+// Updates only the cached email, leaving the token untouched — used to
+// backfill sessions that predate email being stored at all (a token saved
+// before this field existed has no EMAIL_KEY entry), once the real value
+// comes back from an authenticated request like GET /me.
+export function setEmail(email) {
+  currentEmail = email;
+  if (email) {
+    localStorage.setItem(EMAIL_KEY, email);
+  } else {
+    localStorage.removeItem(EMAIL_KEY);
+  }
+}
+
 export function setSession(token, email) {
   currentToken = token;
   currentEmail = email;
