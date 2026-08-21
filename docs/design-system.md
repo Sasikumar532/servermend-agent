@@ -123,15 +123,24 @@ four weight files rather than linking a CDN font.
 
 ## Layout conventions
 
-- **Sidebar shell** (`Layout`) — a fixed `224px` (`w-56`) `bg-surface`
-  sidebar (brand at top, nav links, signed-in-as-email + log out pinned to
-  the bottom via `mt-auto`) beside a full-width main content area (no
+- **Sidebar shell** (`Layout`) — a `bg-surface` sidebar (brand + collapse
+  toggle at top, nav links, signed-in-as-email + log out pinned to the
+  bottom via `mt-auto`) beside a full-width main content area (no
   `max-width` cap — content fills the space beside the sidebar). The whole
   authenticated app lives inside this shell (`ProtectedRoute` → `Layout` →
   page `Outlet`); only `/login` and `/signup` render outside it. Main
   content uses `pt-20` (not the usual `py-6` top value) specifically to
   clear the fixed `ThemeToggle` sitting top-right — a smaller top padding
   lets page-header content (e.g. "Add server") collide with it.
+- **Sidebar collapse** — toggles between `w-56` (full: icon + label) and
+  `w-16` (icon-only, `title` attribute standing in for the hidden label)
+  via a `transition-[width]` class and a plain state boolean persisted to
+  `localStorage` (`servermend_sidebar_collapsed`) so it doesn't reset on
+  every page load. Every nav item — and any future one — needs an icon
+  precisely because of this: collapsed mode has nothing else to show.
+  Icons are inline SVG (`ServerIcon`, `PanelToggleIcon`, `LogoutIcon` in
+  `Layout.jsx`), matching every other icon in this app — no icon library
+  anywhere in the project.
 - **The sidebar stays dark regardless of the app-wide theme** — it has its
   own `dark` class applied directly on the `<aside>`, not just relying on
   `<html>`'s class. HeroUI's tokens are defined under

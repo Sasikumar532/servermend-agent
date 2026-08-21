@@ -1,8 +1,46 @@
+import { useState } from "react";
 import { Button } from "@heroui/react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
-const NAV_ITEMS = [{ to: "/servers", label: "Servers", end: true }];
+function ServerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="shrink-0">
+      <rect x="3" y="4" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x="3" y="14" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="7" cy="7" r="0.75" fill="currentColor" />
+      <circle cx="7" cy="17" r="0.75" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PanelToggleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+      <line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path
+        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const NAV_ITEMS = [{ to: "/servers", label: "Servers", end: true, Icon: ServerIcon }];
+
+const COLLAPSED_KEY = "servermend_sidebar_collapsed";
 
 // Navigation stays plain react-router NavLink (styled with Tailwind)
 // rather than HeroUI's Link — HeroUI's docs don't confirm a working
@@ -10,6 +48,15 @@ const NAV_ITEMS = [{ to: "/servers", label: "Servers", end: true }];
 // what the active-nav-item highlight needs.
 export function Layout() {
   const { email, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "true");
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSED_KEY, String(next));
+      return next;
+    });
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -18,32 +65,54 @@ export function Layout() {
           CSS custom properties cascade by DOM proximity, so scoping this
           class to the sidebar itself keeps it dark regardless of the
           app-wide light/dark/system choice (see ThemeToggle). */}
-      <aside className="dark flex w-56 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4">
-        <div className="px-2 text-lg font-bold tracking-tight text-accent">ServerMend</div>
+      <aside
+        className={`dark flex shrink-0 flex-col gap-6 border-r border-border bg-surface p-4 transition-[width] duration-150 ${collapsed ? "w-16" : "w-56"}`}
+      >
+        <div className="flex items-center justify-between">
+          {!collapsed && <div className="px-2 text-lg font-bold tracking-tight text-accent">ServerMend</div>}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-default hover:text-foreground ${collapsed ? "mx-auto" : ""}`}
+          >
+            <PanelToggleIcon />
+          </button>
+        </div>
         <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.map(({ to, label, end, Icon }) => (
             <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
+              key={to}
+              to={to}
+              end={end}
+              title={collapsed ? label : undefined}
               className={({ isActive }) =>
-                `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${collapsed ? "justify-center px-0" : ""} ${
                   isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-default hover:text-foreground"
                 }`
               }
             >
-              {item.label}
+              <Icon />
+              {!collapsed && label}
             </NavLink>
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-2 border-t border-border pt-4">
-          {email && (
+          {!collapsed && email && (
             <div className="truncate px-2 text-xs text-muted" title={email}>
               {email}
             </div>
           )}
-          <Button variant="outline" className="w-full" onPress={logout}>
-            Log out
+          <Button
+            variant="outline"
+            isIconOnly={collapsed}
+            className={collapsed ? "mx-auto" : "w-full"}
+            onPress={logout}
+            aria-label="Log out"
+            title={collapsed ? "Log out" : undefined}
+          >
+            {collapsed ? <LogoutIcon /> : "Log out"}
           </Button>
         </div>
       </aside>
