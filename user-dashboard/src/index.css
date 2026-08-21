@@ -76,32 +76,87 @@ code {
 
 .app-shell {
   min-height: 100vh;
+  display: flex; /* row: sidebar + main content */
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.5rem;
+  gap: 1.5rem;
+  padding: 1.25rem 1rem;
   background: var(--panel);
-  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
 }
 
-.brand {
+.sidebar-brand {
   font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: -0.01em;
   color: var(--amber);
+  padding: 0 0.5rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-link {
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.sidebar-link:hover {
+  background: var(--panel-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.sidebar-link-active {
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+
+.sidebar-link-active:hover {
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.sidebar-email {
+  padding: 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-logout {
+  width: 100%;
 }
 
 .app-main {
   flex: 1;
+  min-width: 0; /* let wide content (tables) shrink correctly in this flex row */
   max-width: 960px;
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
@@ -119,6 +174,34 @@ code {
   font-size: 0.9rem;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.section-link {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 section {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -129,6 +212,23 @@ section {
 .empty-state {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+/* A <button> made to read as an inline text link, for an action embedded
+   mid-sentence (e.g. inside an empty-state message) where a full button
+   or a real navigation <Link> doesn't fit. */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--amber);
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-button:hover {
+  filter: none;
+  text-decoration: underline;
 }
 
 /* ---- buttons ---- */
@@ -157,6 +257,123 @@ button:disabled {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--line);
+}
+
+/* A <Link> (renders <a>) styled to match button — used instead of nesting
+   a <button> inside an <a>, which creates two focusable/tabbable elements
+   for one action. */
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  background: var(--amber);
+  color: var(--ink);
+  transition: filter 0.1s ease;
+}
+
+.button-link:hover {
+  filter: brightness(0.92);
+  text-decoration: none;
+}
+
+/* ---- forms (outside the auth pages) ---- */
+
+.inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 420px;
+}
+
+.inline-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.inline-form input {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.inline-form input:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.inline-form button {
+  align-self: flex-start;
+}
+
+.optional-label {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.85em;
+}
+
+/* ---- one-time API key reveal (AddServerPage) ---- */
+
+.key-reveal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--panel-2);
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.key-reveal-warning {
+  margin: 0;
+  background: var(--amber-dim);
+  color: var(--amber);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.key-reveal-fields {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  font-size: 0.9rem;
+}
+
+.key-reveal-fields dt {
+  color: var(--muted);
+}
+
+.key-reveal-fields dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.key-reveal-fields code {
+  /* the global `code` background (--panel-2) would be invisible against
+     this panel's own --panel-2 background */
+  background: var(--ink);
+}
+
+.key-reveal-install {
+  margin: 0;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.9rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  color: var(--text);
 }
 
 /* ---- auth pages ---- */
@@ -523,4 +740,65 @@ table {
 .alert-meta {
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+/* ---- modal ---- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 17, 22, 0.72); /* --ink at high opacity */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 1.15rem;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  padding: 0.2rem 0.5rem;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  filter: none;
+  color: var(--text);
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }

@@ -1,19 +1,38 @@
-import { Link, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
+const NAV_ITEMS = [{ to: "/servers", label: "Servers", end: true }];
+
 export function Layout() {
-  const { logout } = useAuth();
+  const { email, logout } = useAuth();
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <Link to="/servers" className="brand">
-          ServerMend
-        </Link>
-        <button type="button" className="button-ghost" onClick={logout}>
-          Log out
-        </button>
-      </header>
+      <aside className="sidebar">
+        <div className="sidebar-brand">ServerMend</div>
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => `sidebar-link${isActive ? " sidebar-link-active" : ""}`}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          {email && (
+            <div className="sidebar-email" title={email}>
+              {email}
+            </div>
+          )}
+          <button type="button" className="button-ghost sidebar-logout" onClick={logout}>
+            Log out
+          </button>
+        </div>
+      </aside>
       <main className="app-main">
         <Outlet />
       </main>

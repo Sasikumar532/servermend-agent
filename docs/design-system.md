@@ -98,12 +98,26 @@ four weight files rather than linking a CDN font.
 
 ## Layout conventions
 
-- Content is capped at `max-width: 960px`, centered, `1.5rem` padding — a
-  dashboard, not a document; the cap keeps tables and cards from stretching
-  edge-to-edge on wide monitors while staying full-width on narrower ones.
+- **Sidebar shell** (`Layout`) — a fixed `220px` `--panel` sidebar (brand at
+  top, nav links, signed-in-as-email + log out pinned to the bottom via
+  `margin-top: auto`) beside a flexible main content area. The whole
+  authenticated app lives inside this shell (`ProtectedRoute` → `Layout` →
+  page `Outlet`); only `/login` and `/signup` render outside it. Nav links
+  use `NavLink`'s `isActive` for an `--amber-dim` background + `--amber`
+  text highlight — reserve top-level sidebar entries for actual sections a
+  user navigates *to* (e.g. "Servers"), not one-off actions (see Modal
+  below for those).
+- Content is capped at `max-width: 960px`, centered within the space beside
+  the sidebar, `1.5rem 2rem` padding — a dashboard, not a document; the cap
+  keeps tables and cards from stretching edge-to-edge on wide monitors
+  while staying full-width on narrower ones.
 - Sections are `--panel` cards: 1px `--line`, 8px radius, `1.25rem`
   padding. Use one section per logical grouping (a score panel, a findings
   table, an alert list) rather than one undifferentiated page of content.
+- A `.page-header` (title + primary action, `justify-content: space-between`)
+  opens a top-level page; a `.section-header` (same shape, smaller) opens a
+  section that has its own secondary action or related-page link (e.g.
+  Score → "Report history").
 - Sibling spacing is layout-driven (flex/grid `gap`), not per-element
   margins — avoids the classic collapsing/doubling margin bug.
 - Flat, no shadows — depth comes from the `ink`/`panel`/`panel-2` step
@@ -151,10 +165,24 @@ needs the same kind of information:
   `opacity: 0.6` plus `cursor: default` — no separate disabled color
   token.
 - **Empty/error states** — empty states are a single `--muted` sentence
-  explaining what to do next (never a bare "No data"); errors are a
+  explaining what to do next (never a bare "No data"), and when that next
+  step is an action rather than navigation, it's a `.link-button` (a real
+  `<button>` styled as inline text, not a `<Link>`, since it opens a modal
+  rather than navigating) embedded in the sentence itself. Errors are a
   `--fail`-on-`--fail-dim` banner with the actual message from the API,
   not a generic "Something went wrong" — this is exactly what the `-dim`
   tokens are for.
+- **Modal** (`Modal`) — centered overlay dialog: `rgba` `--ink` scrim,
+  `--panel` card capped at `480px`, Escape-to-close, click-outside-to-close
+  (an inner `stopPropagation` keeps clicks inside the card from closing
+  it), and a body scroll lock for as long as it's open. Use a modal for a
+  short-lived, one-off action that doesn't deserve its own URL/back-button
+  history entry (registering a server is the current example —
+  `AddServerModal`); use a real routed page for anything a user would want
+  to link to, bookmark, or navigate to directly (server detail, report
+  history). The modal's own heading overrides the global `h2` styling
+  (`text-transform: none`, normal letter-spacing, `--text` color) since
+  it's a dialog title, not a section label.
 
 ## Applying this to admin-dashboard
 

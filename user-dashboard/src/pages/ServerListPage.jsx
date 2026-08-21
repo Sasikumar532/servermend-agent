@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { listServers } from "../api/servers";
+import { AddServerModal } from "../components/AddServerModal";
 
 export function ServerListPage() {
   const [servers, setServers] = useState(null);
   const [error, setError] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  // Bumped after a server is registered to re-trigger the fetch below —
+  // simpler than lifting the fetch into a separately-called function while
+  // still keeping the mount-cancellation guard.
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,18 +25,26 @@ export function ServerListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   if (error) return <p className="form-error">{error}</p>;
   if (servers === null) return <p>Loading…</p>;
 
   return (
     <div>
-      <h1>Servers</h1>
+      <div className="page-header">
+        <h1>Servers</h1>
+        <button type="button" onClick={() => setShowAddModal(true)}>
+          Add server
+        </button>
+      </div>
       {servers.length === 0 ? (
         <p className="empty-state">
-          No servers registered yet. Register one from the API (<code>POST /servers</code>) and install the agent
-          with the returned API key to get started.
+          No servers registered yet.{" "}
+          <button type="button" className="link-button" onClick={() => setShowAddModal(true)}>
+            Add your first server
+          </button>{" "}
+          to get started.
         </p>
       ) : (
         <table className="server-list-table">
@@ -55,6 +69,9 @@ export function ServerListPage() {
             ))}
           </tbody>
         </table>
+      )}
+      {showAddModal && (
+        <AddServerModal onClose={() => setShowAddModal(false)} onCreated={() => setRefreshKey((k) => k + 1)} />
       )}
     </div>
   );

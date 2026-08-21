@@ -1,30 +1,34 @@
 import { createContext, useCallback, useContext, useState } from "react";
 import { login as apiLogin, signup as apiSignup } from "../api/auth";
-import { getToken, setToken as persistToken } from "./tokenStore";
+import { getEmail, getToken, setSession } from "./tokenStore";
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(() => getToken());
+  const [email, setEmailState] = useState(() => getEmail());
 
-  const login = useCallback(async (email, password) => {
-    const { token } = await apiLogin(email, password);
-    persistToken(token);
+  const login = useCallback(async (loginEmail, password) => {
+    const { token } = await apiLogin(loginEmail, password);
+    setSession(token, loginEmail);
     setTokenState(token);
+    setEmailState(loginEmail);
   }, []);
 
-  const signup = useCallback(async (email, password) => {
-    const { token } = await apiSignup(email, password);
-    persistToken(token);
+  const signup = useCallback(async (signupEmail, password) => {
+    const { token } = await apiSignup(signupEmail, password);
+    setSession(token, signupEmail);
     setTokenState(token);
+    setEmailState(signupEmail);
   }, []);
 
   const logout = useCallback(() => {
-    persistToken(null);
+    setSession(null, null);
     setTokenState(null);
+    setEmailState(null);
   }, []);
 
-  const value = { isAuthenticated: token !== null, login, signup, logout };
+  const value = { isAuthenticated: token !== null, email, login, signup, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

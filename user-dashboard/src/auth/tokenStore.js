@@ -2,19 +2,38 @@
 // api/client.js can read the current token synchronously on every request
 // without importing React or AuthContext (which would create a dependency
 // cycle: AuthContext -> api/* -> AuthContext).
-const STORAGE_KEY = "servermend_token";
+const TOKEN_KEY = "servermend_token";
+const EMAIL_KEY = "servermend_email";
 
-let currentToken = localStorage.getItem(STORAGE_KEY);
+let currentToken = localStorage.getItem(TOKEN_KEY);
+let currentEmail = localStorage.getItem(EMAIL_KEY);
 
 export function getToken() {
   return currentToken;
 }
 
-export function setToken(token) {
+// The backend's JWT carries only the user ID, not the email (see
+// signUserToken in userAuth.js) — there's no GET /me endpoint to fetch it
+// back from. Stored here from what the user typed into the login/signup
+// form itself, so the sidebar can show "signed in as" without inventing
+// data or adding a backend endpoint for it.
+export function getEmail() {
+  return currentEmail;
+}
+
+export function setSession(token, email) {
   currentToken = token;
+  currentEmail = email;
+
   if (token) {
-    localStorage.setItem(STORAGE_KEY, token);
+    localStorage.setItem(TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
+  if (email) {
+    localStorage.setItem(EMAIL_KEY, email);
+  } else {
+    localStorage.removeItem(EMAIL_KEY);
   }
 }

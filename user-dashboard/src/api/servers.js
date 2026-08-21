@@ -4,8 +4,17 @@ export function listServers() {
   return apiRequest("/servers");
 }
 
+// hostname is optional — the backend accepts an empty body.
+export function createServer(hostname) {
+  return apiRequest("/servers", { method: "POST", body: hostname ? { hostname } : {} });
+}
+
 export function getServer(serverId) {
   return apiRequest(`/servers/${encodeURIComponent(serverId)}`);
+}
+
+export function getReports(serverId) {
+  return apiRequest(`/servers/${encodeURIComponent(serverId)}/reports`);
 }
 
 export function getFindings(serverId) {

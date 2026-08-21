@@ -70,7 +70,12 @@ export function ServerDetailPage() {
       </p>
 
       <section>
-        <h2>Score</h2>
+        <div className="section-header">
+          <h2>Score</h2>
+          <Link to={`/servers/${server.serverId}/reports`} className="section-link">
+            Report history &rarr;
+          </Link>
+        </div>
         <ScoreBars score={score} />
       </section>
 
