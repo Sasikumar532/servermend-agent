@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { createServer } from "../api/servers";
+import { CopyButton } from "./CopyButton";
 import { Modal } from "./Modal";
 
 export function AddServerModal({ onClose, onCreated }) {
@@ -28,6 +29,10 @@ export function AddServerModal({ onClose, onCreated }) {
     }
   }
 
+  const installCommand = created
+    ? `servermend-agent \\\n  --server-id ${created.serverId} \\\n  --backend-url <your-backend-url> \\\n  --api-key ${created.apiKey}`
+    : "";
+
   return (
     <Modal title={created ? "Server registered" : "Add a server"} onClose={onClose}>
       {created ? (
@@ -40,15 +45,18 @@ export function AddServerModal({ onClose, onCreated }) {
             <dt>Server ID</dt>
             <dd>
               <code>{created.serverId}</code>
+              <CopyButton text={created.serverId} label="Copy server ID" />
             </dd>
             <dt>API key</dt>
             <dd>
               <code>{created.apiKey}</code>
+              <CopyButton text={created.apiKey} label="Copy API key" />
             </dd>
           </dl>
-          <pre className="key-reveal-install">
-            {`servermend-agent \\\n  --server-id ${created.serverId} \\\n  --backend-url <your-backend-url> \\\n  --api-key ${created.apiKey}`}
-          </pre>
+          <div className="key-reveal-install-wrap">
+            <pre className="key-reveal-install">{installCommand}</pre>
+            <CopyButton text={installCommand} label="Copy install command" />
+          </div>
           <div className="modal-actions">
             <Link to={`/servers/${created.serverId}`} className="button-link" onClick={onClose}>
               Go to server detail &rarr;

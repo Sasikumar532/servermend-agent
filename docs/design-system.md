@@ -150,6 +150,15 @@ needs the same kind of information:
   regardless of page theme, so omitting this is a real bug, not a style
   nicety — it renders as a broken white box on the dark page. Focus state
   is a 2px `--amber` outline.
+- **Copy button** (`CopyButton`) — a small bordered icon+label button
+  (`.copy-button`, `--line` border, `--muted` text) next to any value a
+  user needs to paste elsewhere (an ID, a secret, a shell command). Uses
+  `navigator.clipboard.writeText` and swaps to a checkmark + "Copied" for
+  1.5s; a failed clipboard write (permission denied, insecure context) is
+  a silent no-op — the value is still selectable by hand either way, so
+  it's not worth surfacing as an error. Inline next to a value in a
+  `dl`/flex row, or absolutely positioned top-right over a `<pre>` block
+  for multi-line content (`.key-reveal-install-wrap`).
 - **Password field** (`PasswordField`) — a password input with a show/hide
   eye-icon toggle absolutely positioned inside the field (`.password-field`
   wrapper, `position: relative`; the input gets `padding-right` to leave
@@ -173,7 +182,7 @@ needs the same kind of information:
   not a generic "Something went wrong" — this is exactly what the `-dim`
   tokens are for.
 - **Modal** (`Modal`) — centered overlay dialog: `rgba` `--ink` scrim,
-  `--panel` card capped at `640px`, Escape-to-close, click-outside-to-close
+  `--panel` card capped at `760px`, Escape-to-close, click-outside-to-close
   (an inner `stopPropagation` keeps clicks inside the card from closing
   it), and a body scroll lock for as long as it's open. Use a modal for a
   short-lived, one-off action that doesn't deserve its own URL/back-button

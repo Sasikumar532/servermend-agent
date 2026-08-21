@@ -357,6 +357,13 @@ button:disabled {
 
 .key-reveal-fields dd {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.key-reveal-fields dd code {
+  min-width: 0; /* let the code element shrink inside the flex row instead of overflowing */
   word-break: break-all;
 }
 
@@ -366,15 +373,52 @@ button:disabled {
   background: var(--ink);
 }
 
+.key-reveal-install-wrap {
+  position: relative;
+}
+
+.key-reveal-install-wrap .copy-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--panel-2);
+}
+
 .key-reveal-install {
   margin: 0;
   background: var(--ink);
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 0.9rem;
+  padding-right: 6.5rem; /* room for the absolutely-positioned copy button */
   overflow-x: auto;
   font-size: 0.82rem;
   color: var(--text);
+}
+
+/* ---- copy button ---- */
+
+.copy-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.copy-button:hover:not(:disabled) {
+  filter: none;
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.copy-button-label {
+  white-space: nowrap;
 }
 
 /* ---- auth pages ---- */
@@ -758,7 +802,7 @@ table {
 
 .modal {
   width: 100%;
-  max-width: 640px;
+  max-width: 760px;
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
   background: var(--panel);
