@@ -13,4 +13,16 @@ export const env = {
   // calling out to the LLM — the remediation endpoint always returns
   // something useful, live key or not.
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  // Optional. When smtp.host is unset, emailTransport.js records every
+  // alert as "skipped_no_smtp" instead of sending — the Alert row (and
+  // therefore GET /servers/:id/alerts) is always real either way; only
+  // email delivery is affected.
+  smtp: {
+    host: process.env.SMTP_HOST ?? "",
+    port: Number(process.env.SMTP_PORT ?? 587),
+    secure: process.env.SMTP_SECURE === "true", // true for port 465, false for 587/STARTTLS
+    user: process.env.SMTP_USER ?? "",
+    pass: process.env.SMTP_PASS ?? "",
+    from: process.env.SMTP_FROM ?? "alerts@servermend.local",
+  },
 };

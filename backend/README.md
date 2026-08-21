@@ -14,7 +14,8 @@ backend/
 │   ├── services/
 │   │   ├── rulesEngine.js          # pure function: findings + CheckDefinition severities -> per-category + overall score
 │   │   ├── baselineDiff.js          # pure function: confirmed vs. observed baseline -> per-field additions
-│   │   └── llm/remediationClient.js  # B2 — see "LLM remediation" below
+│   │   ├── llm/remediationClient.js  # B2 — see "LLM remediation" below
+│   │   └── alerting/                  # detectNewCriticalFailures.js, alertService.js, emailTransport.js — see "Alerting" below
 │   ├── middleware/
 │   │   ├── agentAuth.js             # per-server API key (SHA-256 hash lookup)
 │   │   ├── userAuth.js               # dashboard JWT
@@ -52,6 +53,19 @@ The agent's persistence checks (cron entries, `authorized_keys`, systemd units, 
 
 Verified against a real backend + the real Go agent binary (not just `mongodb-memory-server`): first run correctly became `confirmed`; a second identical run produced no false drift; and a manually-pushed addition correctly went `pending`, showed up on `GET`, and `POST /confirm` promoted it and cleared `pending`. `test/baselineDiff.test.js` (pure diff logic) and `test/baseline.route.test.js` (full HTTP integration, both the agent-facing push and the dashboard-facing read/confirm) cover it in CI.
 
+## Alerting (email on a new critical finding)
+
+`POST /reports` now also checks, on every ingest, whether the new report contains a critical finding that is `status: fail` and **wasn't already failing on the immediately-previous report** for that server (`services/alerting/detectNewCriticalFailures.js` — a pure transition detector, not "every critical fail every report": a persistently-failing critical check would otherwise re-alert on every single run and train the recipient to ignore it). A server's first-ever report counts every current critical failure as new, on the theory that the first report is exactly when an operator most needs to hear about them.
+
+Two things happen for each newly-critical-and-failing finding, and they're deliberately decoupled:
+
+1. **An `Alert` row is always written** (`models/Alert.js`) — this is the source of truth `GET /servers/:id/alerts` reads, and it exists regardless of whether email delivery succeeds.
+2. **One email is attempted per triggering report** (not one per finding — three new criticals in one report is one inbox item, not three), to the owning user's account email, via `services/alerting/emailTransport.js`. If `SMTP_HOST` isn't set, or the send throws for any reason, the `Alert` row still gets written with `emailStatus: "skipped_no_smtp"` or `"failed"` (plus `emailError`) — the alert itself is never lost just because a mail server is unreachable. Real SMTP delivery uses `nodemailer`; the transport is swappable via `_setTransportForTesting()` the same way `remediationClient.js`'s Anthropic client is, so both the real-send and no-SMTP-configured paths are tested without a real mail server.
+
+The whole alerting step is wrapped in try/catch inside `routes/reports.js` and can never fail the report ingestion request itself — same non-fatal, best-effort principle as the agent's baseline push.
+
+Verified for real, not just via injected fakes: ran the actual `nodemailer.createTransport` path against an unreachable host (`ECONNREFUSED`, correctly caught and recorded as `"failed"`) and against no `SMTP_HOST` at all (`"skipped_no_smtp"`), then a full backend+MongoDB run through `POST /reports` → `Alert` created → `GET /alerts` → a second identical report correctly did **not** duplicate the alert. `test/detectNewCriticalFailures.test.js`, `test/emailTransport.test.js`, and the `alerting on new critical findings` block in `test/api.test.js` cover it in CI.
+
 ## Auth model
 
 - **Agents** authenticate with a per-server API key: `Authorization: Bearer <key>`. The key is stored as a SHA-256 hash (not bcrypt — API keys are high-entropy random tokens, not human passwords, so a fast hash with a unique index is the correct pattern; bcrypt's slow-hash property defends against brute-forcing *weak* secrets, which isn't the threat model here). Issued once via `POST /api/v1/servers`, shown exactly once in the response.
@@ -71,6 +85,7 @@ Full machine-readable spec: `GET /api/v1/openapi.yaml` (served straight from `op
 | `POST /api/v1/servers/:id/baseline` | agent API key | agent pushes its observed persistence baseline (every run) |
 | `GET /api/v1/servers/:id/baseline` | user JWT | current confirmed baseline + any pending drift |
 | `POST /api/v1/servers/:id/baseline/confirm` | user JWT | promote pending drift to confirmed |
+| `GET /api/v1/servers/:id/alerts` | user JWT | alert history — see "Alerting" below |
 | `POST /api/v1/reports` | agent API key | ingest a report — the actual scoring entry point |
 
 ## Rate limiting
@@ -115,15 +130,17 @@ npm run dev
 npm test
 ```
 
-60 tests across nine files:
+77 tests across eleven files:
 - `test/rulesEngine.test.js` — pure scoring logic, no DB
 - `test/checkCatalog.test.js` — seed-data integrity + the agent-ID snapshot check, no DB
 - `test/baselineDiff.test.js` — pure baseline diff logic (additions-only, matches the Go agent's `Diff` semantics), no DB
+- `test/detectNewCriticalFailures.test.js` — pure alert-transition logic: new vs. repeat vs. resolved-then-recurred critical failures, no DB
 - `test/remediationClient.test.js` — B2 remediation client, both the template-fallback and LLM branches, via an injected fake Anthropic client — no DB, no real API key
+- `test/emailTransport.test.js` — alert email sending, both the no-SMTP-configured and real-send-attempt branches, via an injected fake transport — no DB, no real mail server
 - `test/rateLimit.test.js` — the fixed-window limiter in isolation: under/over limit, headers, per-key isolation, window reset
 - `test/openapi.test.js` — confirms `GET /api/v1/openapi.yaml` serves the spec
 - `test/seedScript.test.js` — regression test for a real Windows bug (see below): spawns `seedCheckDefinitions.js` as an actual subprocess against `mongodb-memory-server`, not just calling the exported function
-- `test/api.test.js` — full HTTP integration tests (signup/login, server creation, ownership isolation, report ingestion and scoring, unscored-checkId handling, the B2 remediation endpoint) against a real MongoDB via `mongodb-memory-server`, which downloads its own portable `mongod` binary on first use (no system-wide MongoDB or Docker install needed — confirmed working in a sandboxed dev environment with neither available, and separately re-verified against a real persistent local `mongod` instance)
+- `test/api.test.js` — full HTTP integration tests (signup/login, server creation, ownership isolation, report ingestion and scoring, unscored-checkId handling, the B2 remediation endpoint, alerting on new critical findings) against a real MongoDB via `mongodb-memory-server`, which downloads its own portable `mongod` binary on first use (no system-wide MongoDB or Docker install needed — confirmed working in a sandboxed dev environment with neither available, and separately re-verified against a real persistent local `mongod` instance)
 - `test/baseline.route.test.js` — full HTTP integration for the baseline sync/read/confirm flow: first-push-becomes-confirmed, drift held as pending, confirm promotes it, a resolved-drift push clears a stale pending, ownership isolation
 
 `.github/workflows/backend-ci.yml` runs the full suite on `ubuntu-latest` on every push/PR touching `backend/**`.

@@ -335,6 +335,44 @@ paths:
         "404": { description: "Not found: server not owned, or no pending baseline to confirm" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 
+  /servers/{id}/alerts:
+    get:
+      summary: >
+        Alert history for a server, most recent first. One row per
+        newly-critical-and-failing finding (a check that was already
+        critical-and-failing on the previous report does not re-alert).
+        Always populated regardless of email delivery outcome — emailStatus
+        reflects the delivery attempt for the batch this alert belongs to.
+      security: [{ userJwt: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        checkId: { type: string }
+                        category: { type: string }
+                        title: { type: string }
+                        detail: { type: string }
+                        severity: { type: string, enum: [critical, high, medium, low] }
+                        emailStatus: { type: string, enum: [sent, failed, skipped_no_smtp] }
+                        emailError: { type: string, nullable: true }
+                        createdAt: { type: string, format: date-time }
+        "404": { description: "Not found, or not owned by the authenticated user" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
   /servers/{id}/findings/{checkId}/remediation:
     post:
       summary: >

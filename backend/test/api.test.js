@@ -4,12 +4,17 @@ import { createApp } from "../src/app.js";
 import { seedCheckDefinitions } from "../src/scripts/seedCheckDefinitions.js";
 import { startTestDb, clearTestDb, stopTestDb } from "./mongoTestHelper.js";
 import { _setClientForTesting, _resetClientForTesting } from "../src/services/llm/remediationClient.js";
+import {
+  _setTransportForTesting,
+  _resetTransportForTesting,
+} from "../src/services/alerting/emailTransport.js";
 
 const app = createApp();
 
 beforeAll(startTestDb);
 afterEach(clearTestDb);
 afterEach(_resetClientForTesting);
+afterEach(_resetTransportForTesting);
 afterAll(stopTestDb);
 
 async function signupAndLogin(email = "owner@example.com", password = "hunter22222") {
@@ -273,5 +278,140 @@ describe("remediation endpoint", () => {
     expect(res.status).toBe(200);
     expect(res.body.source).toBe("llm");
     expect(res.body.explanation).toBe("Turn off root SSH login.");
+  });
+});
+
+describe("alerting on new critical findings", () => {
+  async function setupServer() {
+    await seedCheckDefinitions();
+    const token = await signupAndLogin("alerts-owner@example.com");
+    const { serverId, apiKey } = await createServer(token);
+    return { token, serverId, apiKey };
+  }
+
+  function postReport(apiKey, serverId, findings, agentVersion = "0.1.0-test") {
+    return request(app)
+      .post("/api/v1/reports")
+      .set("Authorization", `Bearer ${apiKey}`)
+      .send({ server_id: serverId, agent_version: agentVersion, findings });
+  }
+
+  it("creates an alert (recorded even without SMTP configured) on a new critical failure", async () => {
+    const { token, serverId, apiKey } = await setupServer();
+
+    const ingestRes = await postReport(apiKey, serverId, [
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" },
+    ]);
+    expect(ingestRes.status).toBe(201);
+
+    const alertsRes = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(alertsRes.status).toBe(200);
+    expect(alertsRes.body.alerts).toHaveLength(1);
+    expect(alertsRes.body.alerts[0].checkId).toBe("ssh-root-login");
+    expect(alertsRes.body.alerts[0].severity).toBe("critical");
+    expect(alertsRes.body.alerts[0].emailStatus).toBe("skipped_no_smtp");
+  });
+
+  it("does not create a duplicate alert while the same critical check keeps failing", async () => {
+    const { token, serverId, apiKey } = await setupServer();
+    const findings = [
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" },
+    ];
+
+    await postReport(apiKey, serverId, findings);
+    await postReport(apiKey, serverId, findings); // still failing, same check — must not re-alert
+    await postReport(apiKey, serverId, findings);
+
+    const alertsRes = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(alertsRes.body.alerts).toHaveLength(1);
+  });
+
+  it("alerts again if a resolved critical finding recurs", async () => {
+    const { token, serverId, apiKey } = await setupServer();
+    const failing = [
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" },
+    ];
+    const passing = [
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "pass", detail: "PermitRootLogin no" },
+    ];
+
+    await postReport(apiKey, serverId, failing);
+    await postReport(apiKey, serverId, passing); // resolved
+    await postReport(apiKey, serverId, failing); // recurred
+
+    const alertsRes = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(alertsRes.body.alerts).toHaveLength(2);
+  });
+
+  it("does not alert on non-critical or passing findings", async () => {
+    const { token, serverId, apiKey } = await setupServer();
+    await postReport(apiKey, serverId, [
+      { id: "ssh-weak-ciphers", category: "ssh", title: "t", status: "fail", detail: "weak cipher" }, // medium
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "pass", detail: "" }, // critical but passing
+    ]);
+
+    const alertsRes = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(alertsRes.body.alerts).toHaveLength(0);
+  });
+
+  it("sends a real email to the server owner when a transport is configured", async () => {
+    let captured = null;
+    _setTransportForTesting({
+      sendMail: async (msg) => {
+        captured = msg;
+      },
+    });
+
+    const { token, serverId, apiKey } = await setupServer();
+    await postReport(apiKey, serverId, [
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" },
+    ]);
+
+    expect(captured).not.toBeNull();
+    expect(captured.to).toBe("alerts-owner@example.com");
+    expect(captured.text).toContain("ssh-root-login");
+
+    const alertsRes = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(alertsRes.body.alerts[0].emailStatus).toBe("sent");
+  });
+
+  it("records emailStatus failed, and still ingests the report, when sending throws", async () => {
+    _setTransportForTesting({
+      sendMail: async () => {
+        throw new Error("simulated SMTP outage");
+      },
+    });
+
+    const { token, serverId, apiKey } = await setupServer();
+    const ingestRes = await postReport(apiKey, serverId, [
+      { id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" },
+    ]);
+    expect(ingestRes.status).toBe(201); // alerting failure must never fail report ingestion
+
+    const alertsRes = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(alertsRes.body.alerts[0].emailStatus).toBe("failed");
+    expect(alertsRes.body.alerts[0].emailError).toContain("simulated SMTP outage");
+  });
+
+  it("404s GET /alerts for a server owned by someone else", async () => {
+    const { serverId } = await setupServer();
+    const otherToken = await signupAndLogin("not-the-owner@example.com");
+    const res = await request(app)
+      .get(`/api/v1/servers/${serverId}/alerts`)
+      .set("Authorization", `Bearer ${otherToken}`);
+    expect(res.status).toBe(404);
   });
 });

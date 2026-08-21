@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { Server } from "../models/Server.js";
 import { Report } from "../models/Report.js";
 import { CheckDefinition } from "../models/CheckDefinition.js";
+import { Alert } from "../models/Alert.js";
 import { requireUserAuth } from "../middleware/userAuth.js";
 import { hashApiKey } from "../middleware/agentAuth.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -111,6 +112,27 @@ router.get("/servers/:id/findings", requireUserAuth, dashboardRateLimit, asyncHa
 
   res.json({ findings: latest.findings, score: latest.score, reportedAt: latest.receivedAt });
 }));
+
+// Always reflects reality regardless of email delivery — see Alert.js and
+// services/alerting/alertService.js. Newest first, same convention as
+// GET /servers/:id/reports.
+router.get(
+  "/servers/:id/alerts",
+  requireUserAuth,
+  dashboardRateLimit,
+  asyncHandler(async (req, res) => {
+    const server = await loadOwnedServer(req, res);
+    if (!server) return;
+
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const alerts = await Alert.find({ serverId: server.serverId })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.json({ alerts });
+  })
+);
 
 // On-demand rather than baked into GET /findings — an LLM call per failed
 // finding on every dashboard load would be slow and, with a real API key
