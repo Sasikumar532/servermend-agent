@@ -1,0 +1,471 @@
+/* Canonical source: ../../shared/design-tokens.css — kept byte-identical
+   by hand (see that file's header comment and docs/design-system.md).
+   admin-dashboard's index.css declares the same block. */
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #dde1e6;
+  --text: #1c2128;
+  --text-muted: #5b6472;
+  --track: #e7e9ee;
+
+  --accent: #2f5ff2;
+  --accent-contrast: #ffffff;
+
+  --critical: #c81e3a;
+  --high: #d9622b;
+  --medium: #b8860b;
+  --low: #4a5568;
+  --info: #4a6785;
+
+  --good: #1c8a4a;
+  --warn: #b8860b;
+  --bad: #c81e3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2 {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code {
+  background: var(--track);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ---- layout ---- */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.app-main {
+  flex: 1;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--text-muted);
+}
+
+.server-meta {
+  color: var(--text-muted);
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+}
+
+section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* ---- buttons ---- */
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* ---- auth pages ---- */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.auth-form {
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-form input {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.auth-switch {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.form-error {
+  background: #fdecec;
+  color: var(--critical);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ---- severity pills ---- */
+
+.pill {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.pill-critical {
+  background: var(--critical);
+}
+.pill-high {
+  background: var(--high);
+}
+.pill-medium {
+  background: var(--medium);
+}
+.pill-low {
+  background: var(--low);
+}
+.pill-info {
+  background: var(--info);
+}
+
+/* ---- score ---- */
+
+.score-bars {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.score-overall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 6px solid var(--track);
+  flex-shrink: 0;
+}
+
+.score-overall.score-good {
+  border-color: var(--good);
+}
+.score-overall.score-warn {
+  border-color: var(--warn);
+}
+.score-overall.score-bad {
+  border-color: var(--bad);
+}
+
+.score-overall-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.score-overall-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.score-category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.score-category-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 32px;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.score-category-name {
+  text-transform: capitalize;
+  color: var(--text-muted);
+}
+
+.score-bar-track {
+  background: var(--track);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.score-bar-fill.score-good {
+  background: var(--good);
+}
+.score-bar-fill.score-warn {
+  background: var(--warn);
+}
+.score-bar-fill.score-bad {
+  background: var(--bad);
+}
+
+.score-category-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- tables ---- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.server-list-table th,
+.findings-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.server-list-table td,
+.findings-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.finding-row-clickable {
+  cursor: pointer;
+}
+
+.finding-row-clickable:hover {
+  background: var(--bg);
+}
+
+.finding-status {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.finding-status-fail {
+  color: var(--critical);
+}
+.finding-status-pass {
+  color: var(--good);
+}
+.finding-status-error {
+  color: var(--medium);
+}
+.finding-status-info {
+  color: var(--info);
+}
+
+.finding-detail {
+  color: var(--text-muted);
+}
+
+.unscored-badge {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.3em;
+}
+
+.remediation-row td {
+  background: var(--bg);
+}
+
+.remediation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.remediation-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.remediation-source {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.remediation-loading,
+.remediation-error {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.remediation-error {
+  color: var(--critical);
+}
+
+/* ---- baseline drift ---- */
+
+.drift-review {
+  border-color: var(--warn);
+}
+
+.drift-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.drift-diff-list {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.2rem;
+}
+
+/* ---- alerts ---- */
+
+.alert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.alert-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.alert-list-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.alert-title {
+  flex: 1;
+}
+
+.alert-meta {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}

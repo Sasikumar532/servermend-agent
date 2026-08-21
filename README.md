@@ -8,9 +8,10 @@ A security-audit platform for self-hosted servers (Coolify/Dokploy-style deploym
 servermend-agent/
 ├── agent/              # Go audit agent — collects raw findings, no scoring logic
 ├── backend/             # Node/Express/MongoDB — ingest API, rules engine, LLM remediation layer
-├── user-dashboard/       # React — customer-facing: server scores, findings, remediation
-├── admin-dashboard/      # React — internal: account/server management, check-definition tuning
-├── docs/                 # Reference specs (check catalog, playbook)
+├── user-dashboard/       # React (plain JS/JSX) — customer-facing: server scores, findings, remediation
+├── admin-dashboard/      # React (plain JS/JSX) — internal: account/server management, check-definition tuning
+├── shared/                # Cross-dashboard assets with no shared build tooling to enforce them — see design-tokens.css
+├── docs/                 # Reference specs (check catalog, playbook, design-system.md)
 └── ServerMend_Check_Catalog_and_System_Spec.docx
 ```
 

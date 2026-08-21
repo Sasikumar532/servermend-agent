@@ -1,0 +1,46 @@
+/*
+ * ServerMend design tokens — canonical source.
+ *
+ * Both user-dashboard/src/index.css and admin-dashboard/src/index.css
+ * declare this exact :root block themselves (each dashboard is an
+ * independent Vite app with its own build root, so this file isn't
+ * imported directly — copying it in is the mechanism). Keep the three
+ * copies byte-identical by hand, the same pattern already used elsewhere
+ * in this repo for cross-language contracts that can't share a package
+ * (e.g. backend/openapi.yaml vs. the Go agent's structs, or
+ * backend/src/services/baselineDiff.js vs. agent/baseline/baseline.go's
+ * Diff). See docs/design-system.md for the full rationale, usage
+ * guidance, and component patterns built on top of these tokens.
+ */
+
+:root {
+  /* Surfaces & text */
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #dde1e6;
+  --text: #1c2128;
+  --text-muted: #5b6472;
+  --track: #e7e9ee; /* progress/bar background, e.g. score bars */
+
+  /* Brand accent — primary buttons, links, focus */
+  --accent: #2f5ff2;
+  --accent-contrast: #ffffff; /* text/icon color placed on --accent */
+
+  /* Finding severity scale (SeverityPill and similar). Always pair with a
+     text label, never color alone — see docs/design-system.md. */
+  --critical: #c81e3a;
+  --high: #d9622b;
+  --medium: #b8860b;
+  --low: #4a5568;
+  --info: #4a6785; /* findings with no severity (informational checks) */
+
+  /* Score/quality bands (ScoreBars and any other aggregate-percentage
+     display). A separate scale from severity above — different semantic
+     domain (a single finding's severity vs. an aggregate 0-100 score) —
+     even though --warn and --medium, --bad and --critical, currently
+     share a hex value. Keep them as distinct tokens; don't collapse them
+     even if the values happen to match today. */
+  --good: #1c8a4a;
+  --warn: #b8860b;
+  --bad: #c81e3a;
+}
