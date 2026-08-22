@@ -247,6 +247,51 @@ paths:
                         serverId: { type: string, format: uuid }
                         hostname: { type: string, nullable: true }
                         lastSeenAt: { type: string, format: date-time }
+                  scoreTrend:
+                    type: array
+                    description: >
+                      The most recent reports across the whole fleet
+                      (not one line per server), oldest first, up to 12.
+                    items:
+                      type: object
+                      properties:
+                        receivedAt: { type: string, format: date-time }
+                        score: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /findings:
+    get:
+      summary: >
+        Every failing finding from each owned server's latest report,
+        worst severity first — the fleet-wide counterpart to
+        GET /servers/{id}/findings.
+      security: [{ userJwt: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  findings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        serverId: { type: string, format: uuid }
+                        hostname: { type: string, nullable: true }
+                        checkId: { type: string }
+                        category: { type: string }
+                        title: { type: string }
+                        detail: { type: string }
+                        severity:
+                          type: string
+                          nullable: true
+                          enum: [critical, high, medium, low, null]
+                        scored: { type: boolean }
+                        reportedAt: { type: string, format: date-time }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 

@@ -176,9 +176,16 @@ files rather than linking a CDN font.
   `localStorage` (`servermend_sidebar_collapsed`) so it doesn't reset on
   every page load. Every nav item — and any future one — needs an icon
   precisely because of this: collapsed mode has nothing else to show.
-  Icons are inline SVG (`DashboardIcon`, `ServerIcon`, `ProfileIcon`,
-  `PanelToggleIcon`, `LogoutIcon` in `Layout.jsx`), matching every other
-  icon in this app — no icon library anywhere in the project.
+  Icons are inline SVG (`DashboardIcon`, `FindingsIcon`, `ServerIcon`,
+  `ProfileIcon`, `PanelToggleIcon`, `LogoutIcon` in `Layout.jsx`), matching
+  every other icon in this app — no icon library anywhere in the project.
+- **Nav badges** — a nav item can carry a `badgeKey` (see `NAV_ITEMS` in
+  `Layout.jsx`); `Layout` fetches the count for any item that declares one
+  once on mount (currently just Findings, via `listFleetFindings().length`)
+  and renders it as a small `bg-danger` pill next to the label. Deliberately
+  a real count from a real endpoint, not a static/decorative badge — if a
+  future nav item's count isn't cheap to compute on every page load,
+  don't wire it through this path.
 - **The sidebar stays dark regardless of the app-wide theme** — it has its
   own `dark` class applied directly on the `<aside>`, not just relying on
   `<html>`'s `data-theme`. Tokens are defined under
@@ -257,6 +264,19 @@ information.
   non-expanding grid's fixed row model — it inserts a full-width detail
   `<tr>` when a row is expanded. If admin-dashboard needs the same
   expand-in-place pattern, follow `FindingsTable`'s approach.
+- **Trend chart** (`ScoreTrendChart.jsx`) — a hand-built SVG line+area
+  chart (`viewBox="0 0 640 180"`, three horizontal gridlines at the
+  quarter marks, an accent-colored `polyline` for the line plus a second
+  `polyline` closed to the bottom edge at 10% opacity for the fill under
+  it), not a charting library — one chart, no interactivity beyond what's
+  shown, doesn't justify the dependency. `x` is evenly spaced across the
+  point count, `y` maps score `0–100` directly onto the viewBox height (no
+  library, no arbitrary floor — a real score can be low). Used by
+  `DashboardPage` for the fleet score trend; the design's own version of
+  this chart used a hardcoded illustrative data array (no real endpoint
+  existed for it yet) — `GET /dashboard/summary`'s `scoreTrend` field
+  (the most recent reports across the whole fleet, oldest first) is what
+  makes it real.
 - **Modal** (`Modal.jsx`) — `<Modal title="…" onClose={} footer={}>`
   renders a fixed `inset-0 bg-black/60` backdrop (click closes; Escape
   closes) around a centered `rounded-2xl border border-border bg-surface

@@ -5,6 +5,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { ToastProvider } from "./components/Toast";
 import { AuthProvider } from "./auth/AuthContext";
 import { DashboardPage } from "./pages/DashboardPage";
+import { FindingsPage } from "./pages/FindingsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ServerDetailPage } from "./pages/ServerDetailPage";
@@ -27,6 +28,7 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/findings" element={<FindingsPage />} />
                 <Route path="/servers" element={<ServerListPage />} />
                 <Route path="/servers/:serverId" element={<ServerDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

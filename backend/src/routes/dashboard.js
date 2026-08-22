@@ -12,6 +12,7 @@ const router = Router();
 const ATTENTION_THRESHOLD = 70;
 const RECENT_ACTIVITY_LIMIT = 8;
 const RECENTLY_SEEN_LIMIT = 5;
+const SCORE_TREND_LIMIT = 12;
 
 // One aggregate read for the whole Dashboard page, rather than the page
 // making its own per-server fan-out — findings/alerts only exist
@@ -73,6 +74,22 @@ router.get(
           .lean()
       : [];
 
+    // Most recent reports across the whole fleet (not per-server) —
+    // chronological across every server, not one line per server. Fetched
+    // newest-first (cheap with the existing serverId+receivedAt index),
+    // then reversed so the chart draws oldest-to-newest, left-to-right.
+    const trendReports = serverIds.length
+      ? await Report.find({ serverId: { $in: serverIds } })
+          .sort({ receivedAt: -1 })
+          .limit(SCORE_TREND_LIMIT)
+          .select("score.overall receivedAt")
+          .lean()
+      : [];
+    const scoreTrend = trendReports
+      .slice()
+      .reverse()
+      .map((r) => ({ receivedAt: r.receivedAt, score: r.score.overall }));
+
     res.json({
       servers: { total: servers.length, reporting: reporting.length, neverReported: servers.length - reporting.length },
       averageScore,
@@ -94,6 +111,7 @@ router.get(
       })),
       attentionServers,
       recentlySeen,
+      scoreTrend,
     });
   })
 );

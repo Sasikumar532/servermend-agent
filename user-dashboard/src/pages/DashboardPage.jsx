@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import { getDashboardSummary } from "../api/dashboard";
 import { Card } from "../components/Card";
 import { scoreColorVar } from "../components/ScoreBars";
+import { ScoreTrendChart } from "../components/ScoreTrendChart";
 import { SeverityPill } from "../components/SeverityPill";
 
 function StatCard({ label, value, sub, accent }) {
@@ -42,7 +43,7 @@ export function DashboardPage() {
   if (summary === null) return <p className="text-sm text-muted">Loading…</p>;
 
   const { servers, averageScore, needsAttention, openCriticals, lastIngestAt, checkDefinitionsActive } = summary;
-  const { categoryCounts, recentActivity, attentionServers, recentlySeen } = summary;
+  const { categoryCounts, recentActivity, attentionServers, recentlySeen, scoreTrend } = summary;
   const categoryMax = categoryCounts.length ? Math.max(...categoryCounts.map((c) => c.count)) : 0;
 
   return (
@@ -86,34 +87,48 @@ export function DashboardPage() {
             />
           </div>
 
-          {attentionServers.length > 0 && (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.35fr_1fr]">
+            <Card>
+              <Card.Header>
+                <Card.Title>Fleet score trend</Card.Title>
+                <Card.Description>Average overall score, last {scoreTrend.length || 12} reports.</Card.Description>
+              </Card.Header>
+              <Card.Content>
+                <ScoreTrendChart trend={scoreTrend} />
+              </Card.Content>
+            </Card>
+
             <Card>
               <Card.Header>
                 <Card.Title>Needs attention</Card.Title>
                 <Card.Description>Servers scoring below 70, lowest first.</Card.Description>
               </Card.Header>
               <Card.Content>
-                <ul className="flex flex-col gap-3">
-                  {attentionServers.map((server) => (
-                    <li
-                      key={server.serverId}
-                      className="flex items-center gap-3 border-b border-border pb-3 text-sm last:border-none last:pb-0"
-                    >
-                      <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums"
-                        style={{ borderColor: scoreColorVar(server.score) }}
+                {attentionServers.length === 0 ? (
+                  <p className="text-sm text-muted">Nothing below 70 right now.</p>
+                ) : (
+                  <ul className="flex flex-col gap-3">
+                    {attentionServers.map((server) => (
+                      <li
+                        key={server.serverId}
+                        className="flex items-center gap-3 border-b border-border pb-3 text-sm last:border-none last:pb-0"
                       >
-                        {server.score}
-                      </span>
-                      <Link to={`/servers/${server.serverId}`} className="flex-1 text-accent hover:underline">
-                        {server.hostname ?? server.serverId}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums"
+                          style={{ borderColor: scoreColorVar(server.score) }}
+                        >
+                          {server.score}
+                        </span>
+                        <Link to={`/servers/${server.serverId}`} className="flex-1 text-accent hover:underline">
+                          {server.hostname ?? server.serverId}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </Card.Content>
             </Card>
-          )}
+          </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Card>

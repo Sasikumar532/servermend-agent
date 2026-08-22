@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import {
   confirmBaseline,
@@ -83,12 +83,19 @@ function PendingDriftGroups({ diff }) {
   );
 }
 
+const TAB_IDS = new Set(SERVER_TABS.map((t) => t.id));
+
 export function ServerDetailPage() {
   const { serverId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
 
-  const [tab, setTab] = useState("overview");
+  // Deep-linkable via ?tab= — the fleet-wide Findings inbox's "Fix"
+  // button jumps straight to a server's Findings tab this way, rather
+  // than landing on Overview and making the user click again.
+  const requestedTab = searchParams.get("tab");
+  const [tab, setTab] = useState(TAB_IDS.has(requestedTab) ? requestedTab : "overview");
   const [server, setServer] = useState(null);
   const [findings, setFindings] = useState([]);
   const [score, setScore] = useState(null);

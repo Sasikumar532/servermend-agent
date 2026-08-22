@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { listFleetFindings } from "../api/findings";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "./Button";
 
@@ -10,6 +11,26 @@ function DashboardIcon() {
       <rect x="13" y="3" width="8" height="5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
       <rect x="13" y="10" width="8" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
       <rect x="3" y="13" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function FindingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="shrink-0">
+      <path
+        d="M12 9v4M12 16.5h.01"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.29 3.86 1.82 18a1.5 1.5 0 0 0 1.29 2.25h17.78A1.5 1.5 0 0 0 22.18 18L13.71 3.86a1.5 1.5 0 0 0-2.42 0Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -66,6 +87,7 @@ function LogoutIcon() {
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", end: true, Icon: DashboardIcon },
+  { to: "/findings", label: "Findings", end: true, Icon: FindingsIcon, badgeKey: "findings" },
   { to: "/servers", label: "Servers", end: true, Icon: ServerIcon },
   { to: "/profile", label: "Profile", end: true, Icon: ProfileIcon },
 ];
@@ -79,6 +101,28 @@ const COLLAPSED_KEY = "servermend_sidebar_collapsed";
 export function Layout() {
   const { email, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "true");
+  const [findingsCount, setFindingsCount] = useState(null);
+
+  // Fetched once for the nav badge, independent of whether the Findings
+  // page itself is currently open — cheap (one array of open findings,
+  // not the whole dashboard aggregate) and the sidebar renders on every
+  // authenticated page.
+  useEffect(() => {
+    let cancelled = false;
+    listFleetFindings()
+      .then((res) => {
+        if (!cancelled) setFindingsCount(res.findings.length);
+      })
+      .catch(() => {
+        // Silent — a missing badge count isn't worth an error banner in
+        // the sidebar; the Findings page itself still reports load errors.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const badgeCounts = { findings: findingsCount };
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
@@ -90,8 +134,8 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {/* `dark` applied directly here, not just on <html> — HeroUI's
-          tokens are defined under `.dark,[data-theme=dark] { ... }`, and
+      {/* `dark` applied directly here, not just on <html> — tokens are
+          defined under `.dark,[data-theme=dark] { ... }` in index.css, and
           CSS custom properties cascade by DOM proximity, so scoping this
           class to the sidebar itself keeps it dark regardless of the
           app-wide light/dark/system choice (see ThemeToggle). `fixed`
@@ -118,22 +162,34 @@ export function Layout() {
           </button>
         </div>
         <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map(({ to, label, end, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              title={collapsed ? label : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${collapsed ? "justify-center px-0" : ""} ${
-                  isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-default hover:text-foreground"
-                }`
-              }
-            >
-              <Icon />
-              {!collapsed && label}
-            </NavLink>
-          ))}
+          {NAV_ITEMS.map(({ to, label, end, Icon, badgeKey }) => {
+            const badge = badgeKey ? badgeCounts[badgeKey] : null;
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                title={collapsed ? label : undefined}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${collapsed ? "justify-center px-0" : ""} ${
+                    isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-default hover:text-foreground"
+                  }`
+                }
+              >
+                <Icon />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left">{label}</span>
+                    {!!badge && (
+                      <span className="rounded-full bg-danger px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        {badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
         <div className="mt-auto flex flex-col gap-2 border-t border-border pt-4">
           {!collapsed && email && (

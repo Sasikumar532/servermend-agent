@@ -53,6 +53,7 @@ describe("GET /dashboard/summary", () => {
       recentActivity: [],
       attentionServers: [],
       recentlySeen: [],
+      scoreTrend: [],
     });
   });
 
@@ -104,7 +105,31 @@ describe("GET /dashboard/summary", () => {
     expect(res.body.recentActivity[0].severity).toBe("critical");
     expect(res.body.recentActivity[0].emailStatus).toBe("skipped_no_smtp");
 
+    expect(res.body.scoreTrend).toEqual([{ receivedAt: expect.any(String), score: ingest.body.score.overall }]);
+
     void neverId; // present only to be excluded from the reporting-derived fields above
+  });
+
+  it("scoreTrend spans the whole fleet, oldest first, capped at 12", async () => {
+    await seedCheckDefinitions();
+    const token = await signupAndLogin();
+    const { serverId: aId, apiKey: aKey } = await createServer(token, "a.example.com");
+    const { serverId: bId, apiKey: bKey } = await createServer(token, "b.example.com");
+
+    // Interleaved across two servers — the trend orders by receivedAt
+    // across the fleet, not grouped per server.
+    for (const [serverId, apiKey] of [[aId, aKey], [bId, bKey], [aId, aKey], [bId, bKey]]) {
+      await request(app)
+        .post("/api/v1/reports")
+        .set("Authorization", `Bearer ${apiKey}`)
+        .send({ server_id: serverId, agent_version: "1.0.0", findings: [] });
+    }
+
+    const summary = await request(app).get("/api/v1/dashboard/summary").set("Authorization", `Bearer ${token}`);
+    expect(summary.body.scoreTrend).toHaveLength(4);
+    // Chronological (oldest first) — receivedAt is non-decreasing.
+    const receivedAtValues = summary.body.scoreTrend.map((p) => new Date(p.receivedAt).getTime());
+    expect(receivedAtValues).toEqual([...receivedAtValues].sort((a, b) => a - b));
   });
 
   it("only aggregates the authenticated user's own servers", async () => {
