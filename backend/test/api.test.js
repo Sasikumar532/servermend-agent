@@ -218,6 +218,31 @@ describe("report ingestion", () => {
     expect(res.body.findings[0].severity).toBe("critical");
     expect(res.body.findings[0].scored).toBe(true);
   });
+
+  it("includes a failing-check count per report via GET /servers/:id/reports, without the finding detail text", async () => {
+    const { token, serverId, apiKey } = await setupServerWithDefinitions();
+
+    await request(app)
+      .post("/api/v1/reports")
+      .set("Authorization", `Bearer ${apiKey}`)
+      .send({
+        server_id: serverId,
+        agent_version: "0.2.0",
+        findings: [
+          { id: "ssh-root-login", category: "ssh", title: "t", status: "fail", detail: "PermitRootLogin yes" },
+          { id: "ssh-password-auth", category: "ssh", title: "t", status: "pass", detail: "" },
+        ],
+      });
+
+    const res = await request(app)
+      .get(`/api/v1/servers/${serverId}/reports`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.reports).toHaveLength(1);
+    expect(res.body.reports[0].failingCount).toBe(1);
+    expect(res.body.reports[0].findings).toBeUndefined();
+  });
 });
 
 describe("remediation endpoint", () => {

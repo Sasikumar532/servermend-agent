@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import authRouter from "./routes/auth.js";
 import meRouter from "./routes/me.js";
+import dashboardRouter from "./routes/dashboard.js";
 import serversRouter from "./routes/servers.js";
 import reportsRouter from "./routes/reports.js";
 import baselineRouter from "./routes/baseline.js";
@@ -31,6 +32,7 @@ export function createApp() {
   // Auth middleware belongs on each route individually.
   app.use("/api/v1", authRouter);
   app.use("/api/v1", meRouter);
+  app.use("/api/v1", dashboardRouter);
   app.use("/api/v1", serversRouter);
   app.use("/api/v1", reportsRouter);
   app.use("/api/v1", baselineRouter);

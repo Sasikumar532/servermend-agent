@@ -4,6 +4,7 @@ import { Server } from "../models/Server.js";
 import { Report } from "../models/Report.js";
 import { CheckDefinition } from "../models/CheckDefinition.js";
 import { Alert } from "../models/Alert.js";
+import { Baseline } from "../models/Baseline.js";
 import { requireUserAuth } from "../middleware/userAuth.js";
 import { hashApiKey } from "../middleware/agentAuth.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -86,16 +87,68 @@ router.get("/servers/:id", requireUserAuth, dashboardRateLimit, asyncHandler(asy
   });
 }));
 
+// Display-only — the hostname the agent itself reports (agentVersion,
+// lastSeenAt) is untouched, so this can never desync what the agent
+// authenticates as from what the dashboard shows for it.
+router.patch("/servers/:id", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
+  const server = await loadOwnedServer(req, res);
+  if (!server) return;
+
+  const { hostname } = req.body ?? {};
+  if (hostname !== undefined && typeof hostname !== "string") {
+    res.status(400).json({ error: "hostname must be a string" });
+    return;
+  }
+
+  server.hostname = typeof hostname === "string" ? hostname.trim() || undefined : server.hostname;
+  await server.save();
+
+  res.json({ serverId: server.serverId, hostname: server.hostname ?? null });
+}));
+
+// Irreversible: the API key is a hash of the Server document's own field,
+// so deleting the document is what revokes it (see agentAuth.js's
+// lookup-by-hash) — there's no separate "revoke" step. Reports/alerts/the
+// baseline are deleted alongside it rather than left as orphaned rows
+// under a serverId nothing owns anymore.
+router.delete("/servers/:id", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
+  const server = await loadOwnedServer(req, res);
+  if (!server) return;
+
+  await Promise.all([
+    Report.deleteMany({ serverId: server.serverId }),
+    Alert.deleteMany({ serverId: server.serverId }),
+    Baseline.deleteOne({ serverId: server.serverId }),
+    Server.deleteOne({ serverId: server.serverId }),
+  ]);
+
+  res.status(204).end();
+}));
+
 router.get("/servers/:id/reports", requireUserAuth, dashboardRateLimit, asyncHandler(async (req, res) => {
   const server = await loadOwnedServer(req, res);
   if (!server) return;
 
   const limit = Math.min(Number(req.query.limit) || 20, 100);
-  const reports = await Report.find({ serverId: server.serverId })
-    .sort({ receivedAt: -1 })
-    .limit(limit)
-    .select("-findings") // history list doesn't need every finding's detail text
-    .lean();
+  // Aggregated rather than .find().select("-findings") — the reports list
+  // wants a failing-check count per report without shipping every
+  // finding's title/detail text down the wire for each row.
+  const reports = await Report.aggregate([
+    { $match: { serverId: server.serverId } },
+    { $sort: { receivedAt: -1 } },
+    { $limit: limit },
+    {
+      $project: {
+        agentVersion: 1,
+        timestamp: 1,
+        receivedAt: 1,
+        score: 1,
+        failingCount: {
+          $size: { $filter: { input: "$findings", cond: { $eq: ["$$this.status", "fail"] } } },
+        },
+      },
+    },
+  ]);
 
   res.json({ reports });
 }));
