@@ -9,7 +9,8 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "test": "vitest run",
-    "seed": "node src/scripts/seedCheckDefinitions.js"
+    "seed": "node src/scripts/seedCheckDefinitions.js",
+    "seed:demo": "node src/scripts/seedDemoData.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

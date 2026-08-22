@@ -115,6 +115,15 @@ Seed a running MongoDB with it:
 npm run seed
 ```
 
+For a populated fleet to develop/demo the dashboards against — without
+running a real agent — `npm run seed:demo` (`src/scripts/seedDemoData.js`)
+signs up (or reuses) a demo account and drives 8 servers, several reports
+each, and a couple of baseline pushes through the real app via supertest
+(no port bound), so every score/alert/diff is computed by the actual
+scoring/alerting code, not hand-written. Prints the demo login on
+completion. Re-running is safe (reuses the demo user) but does not dedupe
+servers — point it at a throwaway/dev database.
+
 ## Local run
 
 ```
