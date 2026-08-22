@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Input, Label, TextField } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { Button } from "../components/Button";
+import { Field, TextInput } from "../components/Field";
 import { PasswordField } from "../components/PasswordField";
 
 export function LoginPage() {
@@ -35,12 +36,11 @@ export function LoginPage() {
       >
         <h1 className="text-xl font-semibold">Log in</h1>
         {error && <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
-        <TextField value={email} onChange={setEmail} name="email">
-          <Label>Email</Label>
-          <Input type="email" placeholder="you@example.com" autoFocus />
-        </TextField>
+        <Field label="Email">
+          <TextInput type="email" value={email} onChange={setEmail} name="email" placeholder="you@example.com" autoFocus />
+        </Field>
         <PasswordField label="Password" value={password} onChange={setPassword} required />
-        <Button type="submit" isDisabled={submitting}>
+        <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? "Logging in…" : "Log in"}
         </Button>
         <p className="text-sm text-muted">

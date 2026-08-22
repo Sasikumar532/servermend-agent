@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
-import { Button } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { getRemediation } from "../api/servers";
+import { Button } from "./Button";
 import { SeverityPill } from "./SeverityPill";
 
 // Failing findings first, then errors (checks that couldn't run — still
@@ -15,11 +15,10 @@ const STATUS_TEXT_CLASS = {
   info: "text-muted",
 };
 
-// A plain semantic <table> (Tailwind-styled), not HeroUI's Table component
-// — the per-row expand-in-place remediation panel doesn't cleanly fit an
-// accessible data-table's fixed row/column model, and HeroUI's docs don't
-// confirm support for it. ServerListPage and ServerReportsPage, which are
-// plain non-expanding grids, use the real Table component instead.
+// A plain semantic <table> (Tailwind-styled) — the per-row expand-in-place
+// remediation panel doesn't cleanly fit a fixed row/column model as a
+// non-expanding grid, so this stays hand-built rather than a shared table
+// component.
 export function FindingsTable({ serverId, findings }) {
   const [expandedId, setExpandedId] = useState(null);
   const [remediation, setRemediation] = useState({});
@@ -96,7 +95,7 @@ export function FindingsTable({ serverId, findings }) {
                   <td className="border-b border-border px-3 py-2 align-top text-muted">{finding.detail}</td>
                   <td className="border-b border-border px-3 py-2 align-top">
                     {isFailing && (
-                      <Button size="sm" variant="tertiary" onPress={() => toggle(finding.id)}>
+                      <Button size="sm" variant="outline" onClick={() => toggle(finding.id)}>
                         {expandedId === finding.id ? "Hide" : "Fix"}
                       </Button>
                     )}

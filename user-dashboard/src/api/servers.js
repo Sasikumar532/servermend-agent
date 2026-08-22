@@ -13,6 +13,14 @@ export function getServer(serverId) {
   return apiRequest(`/servers/${encodeURIComponent(serverId)}`);
 }
 
+export function updateServer(serverId, { hostname }) {
+  return apiRequest(`/servers/${encodeURIComponent(serverId)}`, { method: "PATCH", body: { hostname } });
+}
+
+export function deleteServer(serverId) {
+  return apiRequest(`/servers/${encodeURIComponent(serverId)}`, { method: "DELETE" });
+}
+
 export function getReports(serverId) {
   return apiRequest(`/servers/${encodeURIComponent(serverId)}/reports`);
 }

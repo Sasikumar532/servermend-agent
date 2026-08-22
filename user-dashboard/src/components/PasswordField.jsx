@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Input, Label, TextField } from "@heroui/react";
+import { Field, TextInput } from "./Field";
 
 function EyeIcon() {
   return (
@@ -33,18 +33,20 @@ function EyeOffIcon() {
   );
 }
 
-// Built on HeroUI's TextField/Input rather than a documented endContent
-// slot — HeroUI v3's Input docs don't show one, so the toggle is a plain
-// absolutely-positioned button over the input instead.
+// The show/hide toggle is a plain absolutely-positioned button over the
+// input — no documented adornment slot to hook into now that this is a
+// plain <input>.
 export function PasswordField({ label, value, onChange, minLength, required, autoFocus }) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <TextField value={value} onChange={onChange} name="password">
-      <Label>{label}</Label>
+    <Field label={label}>
       <div className="relative">
-        <Input
+        <TextInput
           type={visible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          name="password"
           minLength={minLength}
           required={required}
           autoFocus={autoFocus}
@@ -52,7 +54,7 @@ export function PasswordField({ label, value, onChange, minLength, required, aut
         />
         <button
           type="button"
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
+          className="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
@@ -60,6 +62,6 @@ export function PasswordField({ label, value, onChange, minLength, required, aut
           {visible ? <EyeOffIcon /> : <EyeIcon />}
         </button>
       </div>
-    </TextField>
+    </Field>
   );
 }

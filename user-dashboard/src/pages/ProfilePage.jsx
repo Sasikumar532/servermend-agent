@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Button, Card, Input, Label, TextField } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { getProfile, updateProfile } from "../api/me";
 import { useAuth } from "../auth/AuthContext";
+import { Button } from "../components/Button";
+import { Card } from "../components/Card";
+import { Field, TextInput } from "../components/Field";
 import { useToast } from "../components/Toast";
 
 const FIELDS = [
@@ -106,10 +108,9 @@ export function ProfilePage() {
             <form id="profile-form" className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {FIELDS.map(({ key, label, placeholder }) => (
-                  <TextField key={key} value={form[key]} onChange={(value) => setField(key, value)} name={key}>
-                    <Label>{label}</Label>
-                    <Input placeholder={placeholder} />
-                  </TextField>
+                  <Field key={key} label={label}>
+                    <TextInput value={form[key]} onChange={(value) => setField(key, value)} name={key} placeholder={placeholder} />
+                  </Field>
                 ))}
               </div>
             </form>
@@ -117,7 +118,7 @@ export function ProfilePage() {
         </Card.Content>
         {!loading && !loadError && (
           <Card.Footer className="justify-end">
-            <Button type="submit" form="profile-form" isDisabled={saving}>
+            <Button type="submit" form="profile-form" disabled={saving}>
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </Card.Footer>
@@ -129,7 +130,7 @@ export function ProfilePage() {
           <Card.Title>Account</Card.Title>
         </Card.Header>
         <Card.Footer>
-          <Button variant="danger" onPress={logout}>
+          <Button variant="danger" onClick={logout}>
             Log out
           </Button>
         </Card.Footer>

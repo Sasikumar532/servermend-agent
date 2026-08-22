@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "@heroui/react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { Button } from "./Button";
 
 function DashboardIcon() {
   return (
@@ -143,9 +143,8 @@ export function Layout() {
           )}
           <Button
             variant="outline"
-            isIconOnly={collapsed}
-            className={collapsed ? "mx-auto" : "w-full"}
-            onPress={logout}
+            className={collapsed ? "mx-auto px-0!" : "w-full"}
+            onClick={logout}
             aria-label="Log out"
             title={collapsed ? "Log out" : undefined}
           >

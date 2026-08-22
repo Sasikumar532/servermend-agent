@@ -1,43 +1,101 @@
 @import "tailwindcss";
-@import "@heroui/styles";
 
-/* Light mode: HeroUI's stock palette, plus the one brand touch — a warm
-   amber accent instead of HeroUI's default. */
-:root,
-[data-theme="light"] {
-  --accent: #ffb454;
-  --accent-foreground: #0e1116;
+/* No @heroui/styles import — the app owns its own small token set now,
+   matching the ServerMend User App design (imported from claude.ai/design)
+   value-for-value rather than inheriting HeroUI's token names/defaults. */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-overlay: var(--overlay);
+  --color-default: var(--default);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-fg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* Dark mode: a genuine near-black "terminal" palette (not just HeroUI's
-   stock dark grays) paired with the amber accent — reads as an
-   amber-phosphor terminal. success/warning/danger are deliberately left
-   as HeroUI's own defaults: those are tuned for accessible contrast, and
-   redefining them risks a mistake this environment can't visually catch. */
+:root {
+  --background: #ffffff;
+  --foreground: #11181c;
+  --surface: #ffffff;
+  --overlay: #ffffff;
+  --default: #f4f4f5;
+  --muted: #71717a;
+  --border: #e4e4e7;
+  --accent: #ffb454;
+  --accent-fg: #0e1116;
+  /* success/warning/danger are theme-invariant — the source design never
+     redefines them for [data-theme="light"] either. */
+  --success: #17c964;
+  --warning: #f5a524;
+  --danger: #f31260;
+}
+
+/* System preference drives dark mode only when nothing has explicitly
+   chosen a theme yet (no data-theme attribute at all) — an explicit
+   choice below always wins over this. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --background: #0a0a0a;
+    --foreground: #e4e4e4;
+    --surface: #1a1c1f;
+    --overlay: #050505;
+    --default: #232629;
+    --muted: #7d8280;
+    --border: #2d3033;
+    --accent-fg: #0a0a0a;
+  }
+}
+
+/* Explicit dark — set as data-theme on <html> by ThemeToggle (persisted
+   to localStorage), or forced locally via the .dark class regardless of
+   the app-wide theme (the sidebar keeps this on itself always — CSS
+   custom properties cascade by DOM proximity, so it scopes dark tokens to
+   just that subtree; see Layout.jsx). */
 .dark,
 [data-theme="dark"] {
   --background: #0a0a0a;
   --foreground: #e4e4e4;
-  /* --surface needs real separation from --background — a modal/card
-     rendered in --surface sits on top of the dimmed --background behind
-     it, and too small a gap between the two makes the modal barely
-     readable against the page (this was too subtle at #111214). */
   --surface: #1a1c1f;
-  --surface-foreground: #e4e4e4;
   --overlay: #050505;
-  --overlay-foreground: #e4e4e4;
   --default: #232629;
-  --default-foreground: #e4e4e4;
   --muted: #7d8280;
   --border: #2d3033;
-  --separator: #2d3033;
+  --accent-fg: #0a0a0a;
+}
 
-  --accent: #ffb454;
-  --accent-foreground: #0a0a0a;
+* {
+  box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 
 @keyframes toast-in {

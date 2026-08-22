@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, Table } from "@heroui/react";
 import { ApiError } from "../api/client";
 import { listServers } from "../api/servers";
 import { AddServerModal } from "../components/AddServerModal";
+import { Button } from "../components/Button";
 
 export function ServerListPage() {
   const [servers, setServers] = useState(null);
@@ -35,49 +35,53 @@ export function ServerListPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Servers</h1>
-        <Button onPress={() => setShowAddModal(true)}>Add server</Button>
+        <Button onClick={() => setShowAddModal(true)}>Add server</Button>
       </div>
       {servers.length === 0 ? (
         <p className="text-sm text-muted">
           No servers registered yet.{" "}
-          <button
-            type="button"
-            className="text-accent hover:underline"
-            onClick={() => setShowAddModal(true)}
-          >
+          <button type="button" className="text-accent hover:underline" onClick={() => setShowAddModal(true)}>
             Add your first server
           </button>{" "}
           to get started.
         </p>
       ) : (
-        <Table>
-          <Table.ScrollContainer>
-            <Table.Content aria-label="Servers" className="min-w-160">
-              <Table.Header>
-                <Table.Column isRowHeader>Hostname</Table.Column>
-                <Table.Column>Score</Table.Column>
-                <Table.Column>Agent version</Table.Column>
-                <Table.Column>Last seen</Table.Column>
-              </Table.Header>
-              <Table.Body>
-                {servers.map((server) => (
-                  <Table.Row key={server.serverId}>
-                    <Table.Cell>
-                      <Link to={`/servers/${server.serverId}`} className="text-accent hover:underline">
-                        {server.hostname ?? server.serverId}
-                      </Link>
-                    </Table.Cell>
-                    <Table.Cell>{server.score ? server.score.overall : "—"}</Table.Cell>
-                    <Table.Cell>{server.agentVersion ?? "—"}</Table.Cell>
-                    <Table.Cell>
-                      {server.lastSeenAt ? new Date(server.lastSeenAt).toLocaleString() : "never"}
-                    </Table.Cell>
-                  </Table.Row>
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+          <table className="w-full min-w-160 border-collapse text-sm">
+            <thead>
+              <tr>
+                {["Hostname", "Score", "Agent version", "Last seen"].map((heading) => (
+                  <th
+                    key={heading}
+                    className="border-b border-border px-5 py-3 text-left text-xs font-semibold tracking-wide text-muted uppercase"
+                  >
+                    {heading}
+                  </th>
                 ))}
-              </Table.Body>
-            </Table.Content>
-          </Table.ScrollContainer>
-        </Table>
+              </tr>
+            </thead>
+            <tbody>
+              {servers.map((server) => (
+                <tr key={server.serverId} className="hover:bg-default/50">
+                  <td className="border-b border-border px-5 py-3">
+                    <Link to={`/servers/${server.serverId}`} className="font-medium text-accent hover:underline">
+                      {server.hostname ?? server.serverId}
+                    </Link>
+                  </td>
+                  <td className="border-b border-border px-5 py-3 tabular-nums">
+                    {server.score ? server.score.overall : "—"}
+                  </td>
+                  <td className="border-b border-border px-5 py-3 font-mono text-xs text-muted">
+                    {server.agentVersion ?? "—"}
+                  </td>
+                  <td className="border-b border-border px-5 py-3 text-muted">
+                    {server.lastSeenAt ? new Date(server.lastSeenAt).toLocaleString() : "never"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {showAddModal && (
         <AddServerModal onClose={() => setShowAddModal(false)} onCreated={() => setRefreshKey((k) => k + 1)} />

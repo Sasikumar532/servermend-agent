@@ -1,4 +1,36 @@
-import { useTheme } from "@heroui/react";
+import { useEffect, useState } from "react";
+
+const THEME_KEY = "servermend_theme";
+
+// Matches index.html's blocking pre-paint script: an explicit choice sets
+// data-theme; "system" removes it so index.css's prefers-color-scheme
+// media query decides instead.
+function applyTheme(theme) {
+  if (theme === "system") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+}
+
+// Small hand-rolled replacement for HeroUI's useTheme hook, now that the
+// app no longer depends on HeroUI at all — same contract (persists to
+// localStorage, applies data-theme to <html>), just local to this one
+// consumer instead of a library.
+function useTheme() {
+  const [theme, setThemeState] = useState(() => localStorage.getItem(THEME_KEY) ?? "system");
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  function setTheme(next) {
+    localStorage.setItem(THEME_KEY, next);
+    setThemeState(next);
+  }
+
+  return { theme, setTheme };
+}
 
 function SunIcon() {
   return (
@@ -46,12 +78,9 @@ const OPTIONS = [
 
 // Rendered once at the App root (not per-page) so it's fixed in the same
 // spot regardless of route — including the auth pages, which sit outside
-// the sidebar Layout entirely. Built on HeroUI's own useTheme hook (not a
-// hand-rolled localStorage+class toggle): it already stores the choice,
-// resolves "system" from the OS, and applies both the class and
-// data-theme attribute to <html> — see docs/design-system.md.
+// the sidebar Layout entirely.
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme("system");
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="fixed top-4 right-4 z-50 inline-flex items-center gap-0.5 rounded-full border border-border bg-surface p-1 shadow-sm">

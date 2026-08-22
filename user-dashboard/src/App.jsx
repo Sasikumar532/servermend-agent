@@ -9,7 +9,6 @@ import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ServerDetailPage } from "./pages/ServerDetailPage";
 import { ServerListPage } from "./pages/ServerListPage";
-import { ServerReportsPage } from "./pages/ServerReportsPage";
 import { SignupPage } from "./pages/SignupPage";
 
 export default function App() {
@@ -30,7 +29,6 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/servers" element={<ServerListPage />} />
                 <Route path="/servers/:serverId" element={<ServerDetailPage />} />
-                <Route path="/servers/:serverId/reports" element={<ServerReportsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>

@@ -1,9 +1,22 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ServerMend</title>
+    <!-- Sets data-theme before first paint so an explicit stored choice
+         (light/dark) applies immediately, with no flash of the wrong
+         theme while React hydrates. "system" (or no stored choice) is
+         deliberately left alone here — the prefers-color-scheme media
+         query in index.css handles that case without needing JS at all. -->
+    <script>
+      (function () {
+        var stored = localStorage.getItem("servermend_theme");
+        if (stored === "light" || stored === "dark") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
