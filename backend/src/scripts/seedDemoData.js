@@ -25,7 +25,7 @@ import { env } from "../config/env.js";
 import { User } from "../models/User.js";
 
 const DEMO_EMAIL = "demo@servermend.io";
-const DEMO_PASSWORD = "servermend-demo-fleet";
+const DEMO_PASSWORD = "Sasikumar@2003";
 
 // Same persona the source design ("ServerMend User App", imported from
 // claude.ai/design) uses throughout its own mock data.
