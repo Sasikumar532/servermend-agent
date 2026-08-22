@@ -94,9 +94,16 @@ export function Layout() {
           tokens are defined under `.dark,[data-theme=dark] { ... }`, and
           CSS custom properties cascade by DOM proximity, so scoping this
           class to the sidebar itself keeps it dark regardless of the
-          app-wide light/dark/system choice (see ThemeToggle). */}
+          app-wide light/dark/system choice (see ThemeToggle). `fixed`
+          (not just a flex sibling) so the sidebar stays put in the
+          viewport as the page scrolls — a tall page like Profile or a
+          long findings list would otherwise scroll the nav out of view
+          along with everything else, since it shared the same normal
+          document flow as <main>. z-30 keeps it above page content but
+          below ThemeToggle's own fixed layer isn't a concern — they sit
+          on opposite corners. */}
       <aside
-        className={`dark flex shrink-0 flex-col gap-6 border-r border-border bg-surface p-4 transition-[width] duration-150 ${collapsed ? "w-16" : "w-56"}`}
+        className={`dark fixed inset-y-0 left-0 z-30 flex flex-col gap-6 border-r border-border bg-surface p-4 transition-[width] duration-150 ${collapsed ? "w-16" : "w-56"}`}
       >
         <div className="flex items-center justify-between">
           {!collapsed && <div className="px-2 text-lg font-bold tracking-tight text-accent">ServerMend</div>}
@@ -148,8 +155,11 @@ export function Layout() {
       </aside>
       {/* pt-20 (not py-6's usual top value) clears the fixed top-right
           ThemeToggle, which otherwise overlaps page-header content like
-          the "Add server" button. */}
-      <main className="flex w-full flex-1 flex-col gap-7 px-8 pt-20 pb-6">
+          the "Add server" button. ml-* matches the now-fixed aside's
+          current width so content never sits underneath it. */}
+      <main
+        className={`flex w-full flex-1 flex-col gap-7 px-8 pt-20 pb-6 transition-[margin-left] duration-150 ${collapsed ? "ml-16" : "ml-56"}`}
+      >
         <Outlet />
       </main>
     </div>

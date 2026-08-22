@@ -85,7 +85,7 @@ export function ProfilePage() {
             {avatarLabel}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm text-muted">{fullName ? "Name" : "Signed in as"}</span>
+            {!fullName && <span className="text-sm text-muted">Signed in as</span>}
             <span className="font-medium">{fullName || email || "unknown"}</span>
             {fullName && email && <span className="text-xs text-muted">{email}</span>}
           </div>

@@ -140,6 +140,13 @@ four weight files rather than linking a CDN font.
   content uses `pt-20` (not the usual `py-6` top value) specifically to
   clear the fixed `ThemeToggle` sitting top-right — a smaller top padding
   lets page-header content (e.g. "Add server") collide with it.
+- **The sidebar is `fixed`, not a normal flex sibling** — `<aside>` is
+  `fixed inset-y-0 left-0`, and `<main>` carries a matching `ml-56`/`ml-16`
+  (synced to the same `collapsed` state) instead of relying on flexbox to
+  keep them side by side. A tall page (Profile, a long findings list)
+  would otherwise scroll the whole document — sidebar included — since
+  the sidebar shared one normal-flow container with `<main>`; `fixed`
+  pins it to the viewport regardless of how far the page scrolls.
 - **Sidebar collapse** — toggles between `w-56` (full: icon + label) and
   `w-16` (icon-only, `title` attribute standing in for the hidden label)
   via a `transition-[width]` class and a plain state boolean persisted to
